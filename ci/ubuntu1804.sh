@@ -2,12 +2,10 @@
 set -eu
 
 # If in vagrant:
-if [ -d /home/vagrant ]; then
+if [ -d /home/vagrant -a -z "${VIRTUAL_ENV:-}" ]; then
     . ~/venv/bin/activate
     cd /vagrant
 fi
-
-env
 
 python3 -mpip install -r dev-requirements.txt
 # Need to use -e for pytest-cov to work
