@@ -278,22 +278,22 @@ class AnsibleSpawner(Spawner):
             f'create_playbook ansiblespawner_out: {create["ansiblespawner_out"]}'
         )
         create["tmpdir"].cleanup()
-
         self.serverinfo = create["ansiblespawner_out"] or {}
 
-        update = await self.run_ansible(
-            loop,
-            inv,
-            extravars=extravars,
-            quiet=not self.debug,
-            playbook=os.path.abspath(self.update_playbook),
-        )
-        self.log.debug(
-            f'update_playbook ansiblespawner_out: {update["ansiblespawner_out"]}'
-        )
-        update["tmpdir"].cleanup()
+        if self.update_playbook:
+            update = await self.run_ansible(
+                loop,
+                inv,
+                extravars=extravars,
+                quiet=not self.debug,
+                playbook=os.path.abspath(self.update_playbook),
+            )
+            self.log.debug(
+                f'update_playbook ansiblespawner_out: {update["ansiblespawner_out"]}'
+            )
+            update["tmpdir"].cleanup()
+            self.serverinfo.update(update["ansiblespawner_out"] or {})
 
-        self.serverinfo.update(update["ansiblespawner_out"] or {})
         ip = self.serverinfo["ip"]
         port = int(self.serverinfo["port"])
 
