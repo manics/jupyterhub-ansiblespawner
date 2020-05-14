@@ -16,12 +16,13 @@ jobs:
         - python3 -mpip install pre-commit
       script:
         - pre-commit run --all-files
-    - name: docker
+    - name: docker podman
       services:
         - docker
       before_install:
         - npm install -g configurable-http-proxy
       install:
         - ./ci/ubuntu1804.sh
+        - ./ci/podman_ubuntu.sh
       script:
         - pytest --cov=ansiblespawner tests -vs
