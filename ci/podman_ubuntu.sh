@@ -4,7 +4,6 @@ set -eux
 # https://podman.io/getting-started/installation.html
 
 id
-env | sort
 
 for f in /proc/sys/user/max_*; do
     echo $f
