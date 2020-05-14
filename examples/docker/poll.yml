@@ -1,0 +1,14 @@
+- name: docker poll
+  hosts: localhost
+  tasks:
+
+    - docker_container_info:
+        name: jupyter-{{ user.name }}
+      register: container_info
+
+    # "set_fact: ansiblespawner_out" will be passed back to the spawner
+    - set_fact:
+        ansiblespawner_out:
+          container: "{{ container_info.container | default(None) }}"
+          # TODO: Change to exists instead of running?
+          running: "{{ container_info.exists }}"

@@ -1,0 +1,12 @@
+# These are automatically bumped by dependabot
+ansible==2.9.9
+ansible-runner==1.4.6
+codecov==2.0.22
+docker==4.2.0
+jupyterhub==1.1.0
+notebook==6.0.3
+pre-commit==2.4.0
+pytest==5.4.2
+pytest-asyncio==0.12.0
+pytest-cov==2.8.1
+pytest-tornado==0.8.0

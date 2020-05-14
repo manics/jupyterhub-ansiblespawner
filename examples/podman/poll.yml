@@ -1,0 +1,13 @@
+- name: podman poll
+  hosts: localhost
+  tasks:
+
+    - containers.podman.podman_container_info:
+        name: jupyter-{{ user.name }}
+      register: container_info
+
+    # "set_fact: ansiblespawner_out" will be passed back to the spawner
+    - set_fact:
+        ansiblespawner_out:
+          container: "{{ container_info.containers.0 | default(None) }}"
+          running: "{{ (container_info.containers | length) > 0 }}"

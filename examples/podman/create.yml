@@ -1,0 +1,24 @@
+- name: podman create
+  hosts: localhost
+  tasks:
+
+    - containers.podman.podman_container:
+        name: jupyter-{{ user.name }}
+        state: started
+        image: "{{ container_image }}"
+        # command: sleep 10m
+        detach: true
+        # debug: true
+        env: "{{ spawner_environment }}"
+        rm: true
+        publish:
+          - "8888"
+      register: container_info
+
+    # "set_fact: ansiblespawner_out" will be passed back to the spawner
+    # Must contain fields "ip" and "port"
+    - set_fact:
+        ansiblespawner_out:
+          container: "{{ container_info.container }}"
+          ip: 127.0.0.1
+          port: "{{ container_info.container.NetworkSettings.Ports.0.hostPort }}"

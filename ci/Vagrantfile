@@ -1,0 +1,30 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/ubuntu1804"
+
+  # config.vm.network "forwarded_port", guest: 80, host: 8080
+  # config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+  # config.vm.network "private_network", ip: "192.168.33.10"
+
+  config.vm.provider :virtualbox do |vb|
+    vb.memory = 2048
+    vb.cpus = 2
+  end
+  config.vm.provider :libvirt do |lv|
+    lv.memory = 2048
+    lv.cpus = 2
+    lv.random_hostname = true
+  end
+
+  config.vm.synced_folder "../", "/vagrant"
+
+  config.vm.provision "shell", inline: <<-SHELL
+    apt-get update
+    apt-get install -q -y docker.io npm python3 python3-pip python3-venv
+    npm install -g configurable-http-proxy
+    usermod -aG docker vagrant
+    su vagrant -c "python3 -mvenv ~/venv"
+  SHELL
+end

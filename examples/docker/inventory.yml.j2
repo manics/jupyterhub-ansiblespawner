@@ -1,0 +1,6 @@
+all:
+  hosts:
+    localhost:
+      ansible_connection: local
+    jupyter-{{ user.name }}:
+      ansible_connection: docker

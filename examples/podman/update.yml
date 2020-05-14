@@ -1,0 +1,18 @@
+- name: podman update
+  hosts: jupyter-{{ user.name }}
+  tasks:
+
+    - command: env
+      register: container_env
+
+    - debug:
+        var: container_env
+
+    # Set a fact "ansiblespawner_out" to pass variables back to the spawner
+    # This must be done with set_fact, not register.
+    - set_fact:
+        ansiblespawner_out:
+          container_env: "{{ container_env.stdout_lines }}"
+
+  vars:
+    ansible_python_interpreter: /opt/conda/bin/python

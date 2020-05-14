@@ -1,0 +1,7 @@
+- name: podman destroy
+  hosts: localhost
+  tasks:
+
+    - docker_container:
+        name: jupyter-{{ user.name }}
+        state: absent

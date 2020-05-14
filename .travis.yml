@@ -1,0 +1,27 @@
+---
+language: python
+python:
+  - 3.6
+cache: pip
+
+env:
+  global:
+    - ASYNC_TEST_TIMEOUT=30
+
+jobs:
+  include:
+    # Default stage: test
+    - name: lint
+      install:
+        - python3 -mpip install pre-commit
+      script:
+        - pre-commit run --all-files
+    - name: docker
+      services:
+        - docker
+      before_install:
+        - npm install -g configurable-http-proxy
+      install:
+        - ./ci/ubuntu1804.sh
+      script:
+        - pytest --cov=ansiblespawner tests -vs
