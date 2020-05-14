@@ -4,7 +4,7 @@ set -eu
 # If in vagrant:
 if [ -d /home/vagrant -a -z "${VIRTUAL_ENV:-}" ]; then
     . ~/venv/bin/activate
-    cd /vagrant
+    cd /jupyterhub-ansiblespawner
 fi
 
 python3 -mpip install -r dev-requirements.txt

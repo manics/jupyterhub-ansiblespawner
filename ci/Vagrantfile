@@ -18,13 +18,14 @@ Vagrant.configure("2") do |config|
     lv.random_hostname = true
   end
 
-  config.vm.synced_folder "../", "/vagrant"
+  config.vm.synced_folder "../", "/jupyterhub-ansiblespawner"
 
   config.vm.provision "shell", inline: <<-SHELL
     apt-get update
     apt-get install -q -y docker.io npm python3 python3-pip python3-venv
     npm install -g configurable-http-proxy
     usermod -aG docker vagrant
+    echo 'user.max_user_namespaces=65536' > /etc/sysctl.d/90-podman.conf
     su vagrant -c "python3 -mvenv ~/venv"
   SHELL
 end
