@@ -17,7 +17,12 @@ def _podman_enabled():
 
 
 @pytest.mark.parametrize(
-    "app", ["podman", "docker"], indirect=["app"],
+    "app",
+    [
+        pytest.param("docker", marks=pytest.mark.docker),
+        pytest.param("podman", marks=pytest.mark.podman),
+    ],
+    indirect=["app"],
 )
 @pytest.mark.asyncio
 async def test_integration(app):
