@@ -19,13 +19,8 @@ def _podman_enabled():
 @pytest.mark.parametrize(
     "app",
     [
-        pytest.param(
-            "podman",
-            marks=pytest.mark.skipif(
-                not _podman_enabled(), reason="podman CLI missing"
-            ),
-        ),
-        "docker",
+        pytest.param("docker", marks=pytest.mark.docker),
+        pytest.param("podman", marks=pytest.mark.podman),
     ],
     indirect=["app"],
 )

@@ -1,4 +1,5 @@
 ---
+dist: bionic
 language: python
 python:
   - 3.6
@@ -24,4 +25,13 @@ jobs:
       install:
         - ./ci/ubuntu1804.sh
       script:
-        - pytest --cov=ansiblespawner tests -vs
+        - pytest --cov=ansiblespawner tests -vs -m "not podman"
+    - name: podman
+      before_install:
+        - npm install -g configurable-http-proxy
+      install:
+        - ./ci/ubuntu1804.sh
+        - ./ci/podman_ubuntu.sh
+      script:
+        # Podman on travis is flaky even with the reduced testing scenario
+        - travis_retry pytest --cov=ansiblespawner tests -vs -m "not docker"
