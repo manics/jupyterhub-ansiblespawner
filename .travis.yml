@@ -33,4 +33,5 @@ jobs:
         - ./ci/ubuntu1804.sh
         - ./ci/podman_ubuntu.sh
       script:
-        - pytest --cov=ansiblespawner tests -vs -m "not docker"
+        # Podman on travis is flaky even with the reduced testing scenario
+        - travis_retry pytest --cov=ansiblespawner tests -vs -m "not docker"
