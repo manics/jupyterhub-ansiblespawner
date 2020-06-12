@@ -21,12 +21,13 @@ Python 3.6 or above and JupyterHub 1.0.0 or above are required.
 
 Example `jupyterhub_config.py` spawner configuration.
 ```
+ansible_path = "/path/to/"
 c.JupyterHub.spawner_class = "ansible"
-c.AnsibleSpawner.inventory = "/path/to/inventory.yml.j2"
-c.AnsibleSpawner.create_playbook = "/path/to/create.yml"
-c.AnsibleSpawner.update_playbook = "/path/to/update.yml"
-c.AnsibleSpawner.poll_playbook = "/path/to/poll.yml"
-c.AnsibleSpawner.destroy_playbook = "/path/to/destroy.yml"
+c.AnsibleSpawner.inventory = ansible_path + "inventory.yml.j2"
+c.AnsibleSpawner.create_playbook = ansible_path + "create.yml"
+c.AnsibleSpawner.update_playbook = ansible_path + "update.yml"
+c.AnsibleSpawner.poll_playbook = ansible_path + "poll.yml"
+c.AnsibleSpawner.destroy_playbook = ansible_path + "destroy.yml"
 c.AnsibleSpawner.playbook_vars = {
     "container_image": "docker.io/jupyter/base-notebook",
     "ansible_python_interpreter": "python3",
