@@ -145,3 +145,4 @@ jupyterhub.sqlite
 jupyterhub_cookie_secret
 collections
 .vagrant
+clouds.yaml
