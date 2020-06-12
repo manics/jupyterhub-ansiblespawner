@@ -82,7 +82,8 @@ class AnsibleSpawner(Spawner):
 
         Typically this will target the singleuser server.
         "user", "spawner_environment" and "playbook_vars" variables will be passed
-        to this playbook.
+        to this playbook, along with the contents of "ansiblespawner_out" from the
+        create playbook in a variable named "create_out"
 
         If the create_playbook does not set the fields "ip" and "port" in a fact
         "ansiblespawner_out" this playbook must set them.
@@ -125,7 +126,7 @@ class AnsibleSpawner(Spawner):
         config=True,
         help="""
         Dictionary of parameters passed to Ansible in addition to "user"
-        or a callable that returns a dictionary or parameters
+        or a callable that returns a dictionary of parameters.
         """,
     )
 
@@ -279,6 +280,7 @@ class AnsibleSpawner(Spawner):
         )
         create["tmpdir"].cleanup()
         self.serverinfo = create["ansiblespawner_out"] or {}
+        extravars["create_out"] = self.serverinfo
 
         if self.update_playbook:
             update = await self.run_ansible(
