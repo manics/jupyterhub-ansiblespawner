@@ -3,13 +3,14 @@ JupyterHub spawner that uses Ansible to create singleuser servers
 """
 import ansible_runner
 import asyncio
+from datetime import datetime
 from jinja2 import Template
 from jupyterhub.spawner import Spawner
 from jupyterhub.traitlets import Callable
 import logging
 import os
 import tempfile
-from traitlets import Any, Dict, Unicode, Union
+from traitlets import Bool, Dict, Unicode, Union
 
 
 logger = logging.getLogger(__name__)
@@ -45,11 +46,14 @@ class AnsibleSpawner(Spawner):
         Either the path to a Jinja2 template file or a callable that returns the
         inventory as a dictionary.
 
-        If this is a file the template will be rendered with the JupyterHub User
-        object passed as "user".
+        If this is a file the template will be rendered with the following variables:
+          - command
+          - playbook_vars
+          - serverinfo: Output from the create and update playbooks, may be empty
+          - spawner_environment
+          - user
 
-        If this is a callable JupyterHub User object will be passed as the keyword
-        argument "user".
+        If this is a callable the above variables will be passed as keyword parameters.
 
         If None Ansible will default to "localhost"
         """,
@@ -61,8 +65,11 @@ class AnsibleSpawner(Spawner):
         Playbook to create a singleuser server.
 
         Typically this will target "localhost".
-        "user", "spawner_environment" and "playbook_vars" variables will be passed
-        to this playbook.
+        The following variables will be passed to this playbook:
+          - command
+          - playbook_vars
+          - spawner_environment
+          - user
 
         The playbook may set a fact "ansiblespawner_out" which must include the
         fields "ip" and "port".
@@ -81,9 +88,11 @@ class AnsibleSpawner(Spawner):
         Playbook to update a singleuser server after creation.
 
         Typically this will target the singleuser server.
-        "user", "spawner_environment" and "playbook_vars" variables will be passed
-        to this playbook, along with the contents of "ansiblespawner_out" from the
-        create playbook in a variable named "create_out"
+          - command
+          - playbook_vars
+          - serverinfo: Output from the create playbook
+          - spawner_environment
+          - user
 
         If the create_playbook does not set the fields "ip" and "port" in a fact
         "ansiblespawner_out" this playbook must set them.
@@ -101,8 +110,12 @@ class AnsibleSpawner(Spawner):
         Playbook to check whether a singleuser server exists.
 
         Typically this will target "localhost".
-        "user", "spawner_environment" and "playbook_vars" variables will be passed
-        to this playbook.
+        The following variables will be passed to this playbook:
+          - command
+          - playbook_vars
+          - serverinfo: Output from the create and update playbooks
+          - spawner_environment
+          - user
 
         The playbook must set a fact "ansiblespawner_out" with a boolean field
         "running" to indicate whether the server is running or not.
@@ -115,8 +128,12 @@ class AnsibleSpawner(Spawner):
         Playbook to destroy a singleuser server.
 
         Typically this will target "localhost".
-        "user", "spawner_environment" and "playbook_vars" variables will be passed
-        to this playbook.
+        The following variables will be passed to this playbook:
+          - command
+          - playbook_vars
+          - serverinfo: Output from the create and update playbooks
+          - spawner_environment
+          - user
         """,
     )
 
@@ -130,7 +147,21 @@ class AnsibleSpawner(Spawner):
         """,
     )
 
-    serverinfo = Any(allow_none=True)
+    keep_temp_dirs = Bool(
+        allow_none=True,
+        config=True,
+        help="""
+        Keep the temporary directories used for running Ansible.
+        The directories will be logged at info level.
+        """,
+    )
+
+    serverinfo = Dict(
+        allow_none=True,
+        help="""
+        Dictionary containing persistent state about this server.
+        """,
+    )
 
     async def ansible_async(self, loop, **kwargs):
         """
@@ -164,7 +195,9 @@ class AnsibleSpawner(Spawner):
         tmpdir = None
         private_data_dir = kwargs.get("private_data_dir", None)
         if not private_data_dir:
-            tmpdir = tempfile.TemporaryDirectory()
+            tmpdir = tempfile.TemporaryDirectory(
+                prefix="ansiblespawner-" + datetime.utcnow().strftime("%Y%m%d-%H%M%S-")
+            )
             private_data_dir = tmpdir.name
             ansible_kwargs["private_data_dir"] = private_data_dir
 
@@ -217,19 +250,35 @@ class AnsibleSpawner(Spawner):
             tmpdir=tmpdir,
         )
 
+    def _cleanup_tmpdir(self, tmpdir):
+        if self.keep_temp_dirs:
+            self.log.info(f"Not deleting tmpdir {tmpdir.name}")
+        else:
+            tmpdir.cleanup()
+
     def _env_keep_default(self):
         """Don't inherit any env from the parent process"""
         return []
 
     async def _get_inventory(self):
+        args = await self._get_extravars()
         if callable(self.inventory):
-            return self.inventory(self.user)
+            return self.inventory(**args)
         with open(self.inventory) as f:
             filename = os.path.basename(self.inventory)
             if filename.endswith(".j2"):
                 filename = filename[:-3]
-            content = Template(f.read()).render(user=self.user)
+            content = Template(f.read()).render(**args)
         return filename, content
+
+    def _get_command(self):
+        """
+        A list containing the command to run with arguments
+        """
+        cmd = []
+        cmd.extend(self.cmd)
+        cmd.extend(self.get_args())
+        return cmd
 
     def _get_user(self):
         """
@@ -242,6 +291,8 @@ class AnsibleSpawner(Spawner):
 
     async def _get_extravars(self):
         vars = {
+            "command": self._get_command(),
+            "serverinfo": self.serverinfo or {},
             "user": self._get_user(),
             "spawner_environment": self.get_env(),
         }
@@ -263,6 +314,9 @@ class AnsibleSpawner(Spawner):
         return state
 
     async def start(self):
+        if not self.port:
+            self.port = 8888
+
         inv = await self._get_inventory()
         extravars = await self._get_extravars()
         self.log.debug(f"extravars: {extravars}")
@@ -278,9 +332,11 @@ class AnsibleSpawner(Spawner):
         self.log.debug(
             f'create_playbook ansiblespawner_out: {create["ansiblespawner_out"]}'
         )
-        create["tmpdir"].cleanup()
+        self._cleanup_tmpdir(create["tmpdir"])
         self.serverinfo = create["ansiblespawner_out"] or {}
-        extravars["create_out"] = self.serverinfo
+        extravars["serverinfo"] = self.serverinfo
+        # Create playbook may have modified the inventory
+        inv = await self._get_inventory()
 
         if self.update_playbook:
             update = await self.run_ansible(
@@ -293,7 +349,7 @@ class AnsibleSpawner(Spawner):
             self.log.debug(
                 f'update_playbook ansiblespawner_out: {update["ansiblespawner_out"]}'
             )
-            update["tmpdir"].cleanup()
+            self._cleanup_tmpdir(update["tmpdir"])
             self.serverinfo.update(update["ansiblespawner_out"] or {})
 
         ip = self.serverinfo["ip"]
@@ -320,7 +376,7 @@ class AnsibleSpawner(Spawner):
         self.log.debug(
             f'destroy_playbook ansiblespawner_out: {destroy["ansiblespawner_out"]}'
         )
-        destroy["tmpdir"].cleanup()
+        self._cleanup_tmpdir(destroy["tmpdir"])
 
     async def poll(self):
         # None: single-user process is running.
@@ -344,7 +400,7 @@ class AnsibleSpawner(Spawner):
         self.log.debug(
             f'poll_playbook ansiblespawner_out: {poll["ansiblespawner_out"]}'
         )
-        poll["tmpdir"].cleanup()
+        self._cleanup_tmpdir(poll["tmpdir"])
 
         if poll["ansiblespawner_out"]["running"]:
             return None
