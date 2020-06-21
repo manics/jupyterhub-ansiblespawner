@@ -367,7 +367,8 @@ class AnsibleSpawner(Spawner):
                 (": " + re_sub(r"\x1b[^m]*m", "", e["stdout"])) if "stdout" in e else ""
             )
             # Optional fields: progress, html_message
-            loop.call_soon_threadsafe(queue.put_nowait, {"message": m})
+            if e["event"].startswith("playbook_on_"):
+                loop.call_soon_threadsafe(queue.put_nowait, {"message": m})
             return True
 
         create = await self.run_ansible(
