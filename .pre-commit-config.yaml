@@ -8,8 +8,12 @@ repos:
   rev: 3.8.1
   hooks:
   - id: flake8
-    # default black line length is 88
-    args: [--max-line-length=88]
+    args: [
+      # default black line length is 88
+      --max-line-length=88,
+      # F821 undefined name 'c'
+      "--per-file-ignores=**/jupyterhub_config.py:F821",
+    ]
 - repo: https://github.com/adrienverge/yamllint.git
   rev: v1.23.0
   hooks:
