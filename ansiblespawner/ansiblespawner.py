@@ -4,13 +4,15 @@ JupyterHub spawner that uses Ansible to create singleuser servers
 import ansible_runner
 import asyncio
 from datetime import datetime
+from functools import partial
 from jinja2 import Template
 from jupyterhub.spawner import Spawner
 from jupyterhub.traitlets import Callable
 import logging
 import os
+from re import sub as re_sub
 import tempfile
-from traitlets import Bool, Dict, Unicode, Union
+from traitlets import Bool, Dict, Instance, Unicode, Union
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +38,8 @@ class AnsibleException(Exception):
 
 
 class AnsibleSpawner(Spawner):
+
+    # Configuration properties
 
     inventory = Union(
         [Unicode(), Callable()],
@@ -156,6 +160,17 @@ class AnsibleSpawner(Spawner):
         """,
     )
 
+    # Non-config properties
+
+    events = Instance(
+        asyncio.Queue,
+        args=(),
+        help="""
+        Queue for Ansible events that are shown to the user
+        https://asyncio.readthedocs.io/en/latest/producer_consumer.html
+        """,
+    )
+
     serverinfo = Dict(
         allow_none=True,
         help="""
@@ -211,13 +226,35 @@ class AnsibleSpawner(Spawner):
             ansible_kwargs["inventory"] = inventory_file
 
         ansible_kwargs.update(kwargs)
+
+        def log_event_handler(e):
+            self.log.debug(e["event"] + (("\n" + e["stdout"]) if "stdout" in e else ""))
+            # Needs to return True otherwise the event is discarded
+            # https://github.com/ansible/ansible-runner/blob/1.4.6/ansible_runner/runner.py#L69
+            return True
+
+        if "event_handler" in ansible_kwargs:
+            event_handler = ansible_kwargs["event_handler"]
+
+            def user_event_handler(e, finished=False):
+                log_event_handler(e)
+                return event_handler(e)
+
+            ansible_kwargs["event_handler"] = user_event_handler
+        else:
+            ansible_kwargs["event_handler"] = log_event_handler
+
+        def status_handler(s, runner_config):
+            self.log.info("Ansible status: %s", s)
+            return True
+
+        ansible_kwargs["status_handler"] = status_handler
+
         self.log.debug(f"ansible_kwargs: {ansible_kwargs}")
         r = await self.ansible_async(loop, **ansible_kwargs)
 
         self.log.debug(f"{r.stats}")
         events = list(r.events)
-
-        self.log.debug("".join(r.stdout))
 
         if r.rc != 0:
             self.log.error(f"Ansible: Non-zero exit code: {r.rc}")
@@ -322,12 +359,24 @@ class AnsibleSpawner(Spawner):
         self.log.debug(f"extravars: {extravars}")
         loop = asyncio.get_event_loop()
 
+        # When starting we want to show progress messages.
+        # Ansible async runs in a separate thread
+        def event_handler(loop, queue, e):
+            # Remove colour escape codes
+            m = e["event"] + (
+                (": " + re_sub(r"\x1b[^m]*m", "", e["stdout"])) if "stdout" in e else ""
+            )
+            # Optional fields: progress, html_message
+            loop.call_soon_threadsafe(queue.put_nowait, {"message": m})
+            return True
+
         create = await self.run_ansible(
             loop,
             inv,
             extravars=extravars,
             quiet=not self.debug,
             playbook=os.path.abspath(self.create_playbook),
+            event_handler=partial(event_handler, loop, self.events),
         )
         self.log.debug(
             f'create_playbook ansiblespawner_out: {create["ansiblespawner_out"]}'
@@ -345,6 +394,7 @@ class AnsibleSpawner(Spawner):
                 extravars=extravars,
                 quiet=not self.debug,
                 playbook=os.path.abspath(self.update_playbook),
+                event_handler=partial(event_handler, loop, self.events),
             )
             self.log.debug(
                 f'update_playbook ansiblespawner_out: {update["ansiblespawner_out"]}'
@@ -356,6 +406,7 @@ class AnsibleSpawner(Spawner):
         port = int(self.serverinfo["port"])
 
         self.log.info(f"Started server on {ip}:{port}")
+        self.events.put_nowait(None)
         return ip, port
 
     async def stop(self, now=False):
@@ -405,3 +456,13 @@ class AnsibleSpawner(Spawner):
         if poll["ansiblespawner_out"]["running"]:
             return None
         return 0
+
+    async def progress(self):
+        """
+        https://github.com/jupyterhub/jupyterhub/blob/1.1.0/jupyterhub/spawner.py#L1009-L1032
+        """
+        while True:
+            event = await self.events.get()
+            if event is None:
+                break
+            yield event
