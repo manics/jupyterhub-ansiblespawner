@@ -266,13 +266,13 @@ class AnsibleSpawner(Spawner):
             self.log.error(f"Ansible: No successful tasks: {r.stats}")
             raise AnsibleException("No successful tasks", r)
 
-        ansiblespawner_out = None
-        for e in reversed(events):
+        ansiblespawner_out = {}
+        for e in events:
             if e["event"] == "runner_on_ok":
                 try:
-                    ansiblespawner_out = e["event_data"]["res"]["ansible_facts"][
-                        "ansiblespawner_out"
-                    ]
+                    ansiblespawner_out.update(
+                        e["event_data"]["res"]["ansible_facts"]["ansiblespawner_out"]
+                    )
                     break
                 except KeyError:
                     continue
