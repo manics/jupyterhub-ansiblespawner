@@ -15,6 +15,11 @@ from ansiblespawner import AnsibleSpawner
 MockHub.hub_ip = "0.0.0.0"
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "docker: Run only docker tests")
+    config.addinivalue_line("markers", "podman: Run only podman tests")
+
+
 def _get_host_default_ip():
     """
     IP associated with the default route
