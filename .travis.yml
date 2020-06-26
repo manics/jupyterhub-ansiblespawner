@@ -25,7 +25,7 @@ jobs:
       install:
         - ./ci/ubuntu1804.sh
       script:
-        - pytest --cov=ansiblespawner tests -vs -m "not podman"
+        - pytest --cov=ansiblespawner tests -vs -m "not podman" --cov-fail-under=90
     - name: podman
       before_install:
         - npm install -g configurable-http-proxy
@@ -34,4 +34,4 @@ jobs:
         - ./ci/podman_ubuntu.sh
       script:
         # Podman on travis is flaky even with the reduced testing scenario
-        - travis_retry pytest --cov=ansiblespawner tests -vs -m "not docker"
+        - travis_retry pytest --cov=ansiblespawner tests -vs -m "not docker" --cov-fail-under=90

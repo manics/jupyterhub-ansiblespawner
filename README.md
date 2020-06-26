@@ -48,5 +48,7 @@ For example, to disable the Docker tests:
 
     pytest -vs -m "not docker"
 
+To view test coverage run pytest with `--cov=ansiblespawner --cov-report=html`, then open `htmlcov/index.html`.
+
 [setuptools-scm](https://pypi.org/project/setuptools-scm/) is used to manage versions.
 Just create a git tag.
