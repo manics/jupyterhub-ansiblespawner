@@ -1,6 +1,7 @@
 # AnsibleSpawner
 
 [![Build Status](https://travis-ci.com/manics/jupyterhub-ansiblespawner.svg?branch=master)](https://travis-ci.com/manics/jupyterhub-ansiblespawner)
+[![codecov](https://codecov.io/gh/manics/jupyterhub-ansiblespawner/branch/master/graph/badge.svg)](https://codecov.io/gh/manics/jupyterhub-ansiblespawner)
 
 Spawn [JupyterHub](https://github.com/jupyterhub/jupyterhub) single user notebook servers using [Ansible](https://www.ansible.com/).
 
