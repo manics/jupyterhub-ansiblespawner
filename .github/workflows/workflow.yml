@@ -1,6 +1,6 @@
 # https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Run tests
+name: Build
 on: [push, pull_request]
 
 jobs:
