@@ -16,8 +16,21 @@ jobs:
 
   test:
     name: Test
+    strategy:
+      # fail-fast: false
+      matrix:
+        pytestmark:
+          - not docker
+          - not podman
     runs-on: ubuntu-20.04
     steps:
+      - name: Enable rootless podman
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -q -y fuse-overlayfs
+          podman info
+          slirp4netns --version
+          fuse-overlayfs --version
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
@@ -46,7 +59,7 @@ jobs:
           ansible-galaxy collection install -p collections -r requirements.yml
           cd ../..
       - name: Run tests
-        run: pytest --cov=ansiblespawner tests -vs --cov-report=xml --cov-report=term-missing --cov-fail-under=95
+        run: pytest --cov=ansiblespawner tests -vs -m "${{ matrix.pytestmark }}" --cov-report=xml --cov-report=term-missing --cov-fail-under=95
         # https://github.com/marketplace/actions/codecov
       - name: Upload coverage stats
         uses: codecov/codecov-action@v1
