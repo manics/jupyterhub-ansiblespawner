@@ -10,3 +10,8 @@ repos:
   - id: flake8
     # default black line length is 88
     args: [--max-line-length=88]
+- repo: https://github.com/adrienverge/yamllint.git
+  rev: v1.23.0
+  hooks:
+  - id: yamllint
+    args: [--config-data=relaxed]
