@@ -18,6 +18,13 @@ jobs:
     name: Test
     runs-on: ubuntu-20.04
     steps:
+      - name: Enable rootless podman
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -q -y fuse-overlayfs
+          podman info
+          slirp4netns --version
+          fuse-overlayfs --version
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
