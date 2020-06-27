@@ -3,13 +3,16 @@ JupyterHub spawner that uses Ansible to create singleuser servers
 """
 import ansible_runner
 import asyncio
+from datetime import datetime
+from functools import partial
 from jinja2 import Template
 from jupyterhub.spawner import Spawner
 from jupyterhub.traitlets import Callable
 import logging
 import os
+from re import sub as re_sub
 import tempfile
-from traitlets import Any, Dict, Unicode, Union
+from traitlets import Bool, Dict, Instance, Unicode, Union
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +39,8 @@ class AnsibleException(Exception):
 
 class AnsibleSpawner(Spawner):
 
+    # Configuration properties
+
     inventory = Union(
         [Unicode(), Callable()],
         allow_none=True,
@@ -45,11 +50,14 @@ class AnsibleSpawner(Spawner):
         Either the path to a Jinja2 template file or a callable that returns the
         inventory as a dictionary.
 
-        If this is a file the template will be rendered with the JupyterHub User
-        object passed as "user".
+        If this is a file the template will be rendered with the following variables:
+          - command
+          - playbook_vars
+          - serverinfo: Output from the create and update playbooks, may be empty
+          - spawner_environment
+          - user
 
-        If this is a callable JupyterHub User object will be passed as the keyword
-        argument "user".
+        If this is a callable the above variables will be passed as keyword parameters.
 
         If None Ansible will default to "localhost"
         """,
@@ -61,8 +69,11 @@ class AnsibleSpawner(Spawner):
         Playbook to create a singleuser server.
 
         Typically this will target "localhost".
-        "user", "spawner_environment" and "playbook_vars" variables will be passed
-        to this playbook.
+        The following variables will be passed to this playbook:
+          - command
+          - playbook_vars
+          - spawner_environment
+          - user
 
         The playbook may set a fact "ansiblespawner_out" which must include the
         fields "ip" and "port".
@@ -81,8 +92,11 @@ class AnsibleSpawner(Spawner):
         Playbook to update a singleuser server after creation.
 
         Typically this will target the singleuser server.
-        "user", "spawner_environment" and "playbook_vars" variables will be passed
-        to this playbook.
+          - command
+          - playbook_vars
+          - serverinfo: Output from the create playbook
+          - spawner_environment
+          - user
 
         If the create_playbook does not set the fields "ip" and "port" in a fact
         "ansiblespawner_out" this playbook must set them.
@@ -100,8 +114,12 @@ class AnsibleSpawner(Spawner):
         Playbook to check whether a singleuser server exists.
 
         Typically this will target "localhost".
-        "user", "spawner_environment" and "playbook_vars" variables will be passed
-        to this playbook.
+        The following variables will be passed to this playbook:
+          - command
+          - playbook_vars
+          - serverinfo: Output from the create and update playbooks
+          - spawner_environment
+          - user
 
         The playbook must set a fact "ansiblespawner_out" with a boolean field
         "running" to indicate whether the server is running or not.
@@ -114,8 +132,12 @@ class AnsibleSpawner(Spawner):
         Playbook to destroy a singleuser server.
 
         Typically this will target "localhost".
-        "user", "spawner_environment" and "playbook_vars" variables will be passed
-        to this playbook.
+        The following variables will be passed to this playbook:
+          - command
+          - playbook_vars
+          - serverinfo: Output from the create and update playbooks
+          - spawner_environment
+          - user
         """,
     )
 
@@ -125,11 +147,36 @@ class AnsibleSpawner(Spawner):
         config=True,
         help="""
         Dictionary of parameters passed to Ansible in addition to "user"
-        or a callable that returns a dictionary or parameters
+        or a callable that returns a dictionary of parameters.
         """,
     )
 
-    serverinfo = Any(allow_none=True)
+    keep_temp_dirs = Bool(
+        allow_none=True,
+        config=True,
+        help="""
+        Keep the temporary directories used for running Ansible.
+        The directories will be logged at info level.
+        """,
+    )
+
+    # Non-config properties
+
+    events = Instance(
+        asyncio.Queue,
+        args=(),
+        help="""
+        Queue for Ansible events that are shown to the user
+        https://asyncio.readthedocs.io/en/latest/producer_consumer.html
+        """,
+    )
+
+    serverinfo = Dict(
+        allow_none=True,
+        help="""
+        Dictionary containing persistent state about this server.
+        """,
+    )
 
     async def ansible_async(self, loop, **kwargs):
         """
@@ -163,7 +210,9 @@ class AnsibleSpawner(Spawner):
         tmpdir = None
         private_data_dir = kwargs.get("private_data_dir", None)
         if not private_data_dir:
-            tmpdir = tempfile.TemporaryDirectory()
+            tmpdir = tempfile.TemporaryDirectory(
+                prefix="ansiblespawner-" + datetime.utcnow().strftime("%Y%m%d-%H%M%S-")
+            )
             private_data_dir = tmpdir.name
             ansible_kwargs["private_data_dir"] = private_data_dir
 
@@ -177,13 +226,35 @@ class AnsibleSpawner(Spawner):
             ansible_kwargs["inventory"] = inventory_file
 
         ansible_kwargs.update(kwargs)
+
+        def log_event_handler(e):
+            self.log.debug(e["event"] + (("\n" + e["stdout"]) if "stdout" in e else ""))
+            # Needs to return True otherwise the event is discarded
+            # https://github.com/ansible/ansible-runner/blob/1.4.6/ansible_runner/runner.py#L69
+            return True
+
+        if "event_handler" in ansible_kwargs:
+            event_handler = ansible_kwargs["event_handler"]
+
+            def user_event_handler(e, finished=False):
+                log_event_handler(e)
+                return event_handler(e)
+
+            ansible_kwargs["event_handler"] = user_event_handler
+        else:
+            ansible_kwargs["event_handler"] = log_event_handler
+
+        def status_handler(s, runner_config):
+            self.log.info("Ansible status: %s", s)
+            return True
+
+        ansible_kwargs["status_handler"] = status_handler
+
         self.log.debug(f"ansible_kwargs: {ansible_kwargs}")
         r = await self.ansible_async(loop, **ansible_kwargs)
 
         self.log.debug(f"{r.stats}")
         events = list(r.events)
-
-        self.log.debug("".join(r.stdout))
 
         if r.rc != 0:
             self.log.error(f"Ansible: Non-zero exit code: {r.rc}")
@@ -195,13 +266,13 @@ class AnsibleSpawner(Spawner):
             self.log.error(f"Ansible: No successful tasks: {r.stats}")
             raise AnsibleException("No successful tasks", r)
 
-        ansiblespawner_out = None
-        for e in reversed(events):
+        ansiblespawner_out = {}
+        for e in events:
             if e["event"] == "runner_on_ok":
                 try:
-                    ansiblespawner_out = e["event_data"]["res"]["ansible_facts"][
-                        "ansiblespawner_out"
-                    ]
+                    ansiblespawner_out.update(
+                        e["event_data"]["res"]["ansible_facts"]["ansiblespawner_out"]
+                    )
                     break
                 except KeyError:
                     continue
@@ -216,19 +287,35 @@ class AnsibleSpawner(Spawner):
             tmpdir=tmpdir,
         )
 
+    def _cleanup_tmpdir(self, tmpdir):
+        if self.keep_temp_dirs:
+            self.log.info(f"Not deleting tmpdir {tmpdir.name}")
+        else:
+            tmpdir.cleanup()
+
     def _env_keep_default(self):
         """Don't inherit any env from the parent process"""
         return []
 
     async def _get_inventory(self):
+        args = await self._get_extravars()
         if callable(self.inventory):
-            return self.inventory(self.user)
+            return self.inventory(**args)
         with open(self.inventory) as f:
             filename = os.path.basename(self.inventory)
             if filename.endswith(".j2"):
                 filename = filename[:-3]
-            content = Template(f.read()).render(user=self.user)
+            content = Template(f.read()).render(**args)
         return filename, content
+
+    def _get_command(self):
+        """
+        A list containing the command to run with arguments
+        """
+        cmd = []
+        cmd.extend(self.cmd)
+        cmd.extend(self.get_args())
+        return cmd
 
     def _get_user(self):
         """
@@ -241,6 +328,8 @@ class AnsibleSpawner(Spawner):
 
     async def _get_extravars(self):
         vars = {
+            "command": self._get_command(),
+            "serverinfo": self.serverinfo or {},
             "user": self._get_user(),
             "spawner_environment": self.get_env(),
         }
@@ -262,10 +351,25 @@ class AnsibleSpawner(Spawner):
         return state
 
     async def start(self):
+        if not self.port:
+            self.port = 8888
+
         inv = await self._get_inventory()
         extravars = await self._get_extravars()
         self.log.debug(f"extravars: {extravars}")
         loop = asyncio.get_event_loop()
+
+        # When starting we want to show progress messages.
+        # Ansible async runs in a separate thread
+        def event_handler(loop, queue, e):
+            # Remove colour escape codes
+            m = e["event"] + (
+                (": " + re_sub(r"\x1b[^m]*m", "", e["stdout"])) if "stdout" in e else ""
+            )
+            # Optional fields: progress, html_message
+            if e["event"].startswith("playbook_on_"):
+                loop.call_soon_threadsafe(queue.put_nowait, {"message": m})
+            return True
 
         create = await self.run_ansible(
             loop,
@@ -273,12 +377,16 @@ class AnsibleSpawner(Spawner):
             extravars=extravars,
             quiet=not self.debug,
             playbook=os.path.abspath(self.create_playbook),
+            event_handler=partial(event_handler, loop, self.events),
         )
         self.log.debug(
             f'create_playbook ansiblespawner_out: {create["ansiblespawner_out"]}'
         )
-        create["tmpdir"].cleanup()
+        self._cleanup_tmpdir(create["tmpdir"])
         self.serverinfo = create["ansiblespawner_out"] or {}
+        extravars["serverinfo"] = self.serverinfo
+        # Create playbook may have modified the inventory
+        inv = await self._get_inventory()
 
         if self.update_playbook:
             update = await self.run_ansible(
@@ -287,17 +395,19 @@ class AnsibleSpawner(Spawner):
                 extravars=extravars,
                 quiet=not self.debug,
                 playbook=os.path.abspath(self.update_playbook),
+                event_handler=partial(event_handler, loop, self.events),
             )
             self.log.debug(
                 f'update_playbook ansiblespawner_out: {update["ansiblespawner_out"]}'
             )
-            update["tmpdir"].cleanup()
+            self._cleanup_tmpdir(update["tmpdir"])
             self.serverinfo.update(update["ansiblespawner_out"] or {})
 
         ip = self.serverinfo["ip"]
         port = int(self.serverinfo["port"])
 
         self.log.info(f"Started server on {ip}:{port}")
+        self.events.put_nowait(None)
         return ip, port
 
     async def stop(self, now=False):
@@ -318,7 +428,7 @@ class AnsibleSpawner(Spawner):
         self.log.debug(
             f'destroy_playbook ansiblespawner_out: {destroy["ansiblespawner_out"]}'
         )
-        destroy["tmpdir"].cleanup()
+        self._cleanup_tmpdir(destroy["tmpdir"])
 
     async def poll(self):
         # None: single-user process is running.
@@ -342,8 +452,18 @@ class AnsibleSpawner(Spawner):
         self.log.debug(
             f'poll_playbook ansiblespawner_out: {poll["ansiblespawner_out"]}'
         )
-        poll["tmpdir"].cleanup()
+        self._cleanup_tmpdir(poll["tmpdir"])
 
         if poll["ansiblespawner_out"]["running"]:
             return None
         return 0
+
+    async def progress(self):
+        """
+        https://github.com/jupyterhub/jupyterhub/blob/1.1.0/jupyterhub/spawner.py#L1009-L1032
+        """
+        while True:
+            event = await self.events.get()
+            if event is None:
+                break
+            yield event

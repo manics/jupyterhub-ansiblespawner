@@ -1,0 +1,14 @@
+- hosts: localhost
+  gather_facts: false
+  tasks:
+
+    - name: set ansiblespawner_output 1
+      set_fact:
+        ansiblespawner_output:
+          ip: 127.0.0.127
+          port: 12345
+
+    - name: set ansiblespawner_output 2
+      set_fact:
+        ansiblespawner_output:
+          inventory_var: "{{ inventory_var }}"
