@@ -1,0 +1,37 @@
+- name: openstack create
+  hosts: localhost
+  tasks:
+
+    - os_keypair:
+        name: jupyter
+        public_key_file: "{{ ssh_public_key }}"
+        state: present
+
+    # https://docs.ansible.com/ansible/latest/modules/os_server_module.html
+    - os_server:
+        name: jupyter-{{ user.name }}
+        auto_ip: false
+        # flavor: s1.small
+        flavor_ram: 2000
+        image: "{{ cloud_baseimage }}"
+        key_name: jupyter
+        network: "{{ network_name }}"
+        state: present
+        timeout: 300
+      register: _instance
+
+    - debug: var=_instance
+
+    # "set_fact: ansiblespawner_out" will be passed back to the spawner
+    # Will be merged with "ansiblespawner_out" from the update playbook if
+    # its defined. The final output must contain fields "ip" and "port"
+    - set_fact:
+        ansiblespawner_out:
+          openstack_instance: "{{ _instance.openstack }}"
+          ip: "{{ _instance.openstack.addresses[network_name].0.addr }}"
+          # port:
+
+  vars:
+    cloud_baseimage: CentOS-8-GenericCloud-8.1.1911-20200113.3
+    network_name: jupyter
+    ssh_public_key: "{{ ansible_srcdir }}jupyter-id_rsa.pub"

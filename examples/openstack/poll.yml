@@ -1,0 +1,39 @@
+- name: openstack poll (vm)
+  hosts: localhost
+  tasks:
+
+    # https://docs.ansible.com/ansible/latest/modules/os_server_info_module.html
+    - os_server_info:
+        server: jupyter-{{ user.name }}
+      register: _instance
+
+    # "set_fact: ansiblespawner_out" will be passed back to the spawner
+    - set_fact:
+        ansiblespawner_out:
+          instance: "{{ _instance.openstack_servers.0 | default(None) }}"
+          exists: "{{ _instance.openstack_servers | length > 0 }}"
+          running: false
+
+
+- name: openstack poll (service)
+  hosts: jupyter-{{ user.name }}
+  become: true
+
+  tasks:
+
+    - name: Get list of services
+      service_facts:
+
+    - debug:
+        msg: "{{ ansible_facts.services['jupyterhub-singleuser.service'] }}"
+
+    # Overrides the "running" field from "ansiblespawner_out" in the previous play
+    - set_fact:
+        ansiblespawner_out:
+          running: >-
+            {{
+              ('jupyterhub-singleuser.service' in ansible_facts.services) and ansible_facts.services['jupyterhub-singleuser.service'].state == 'running'
+            }}
+
+    - debug:
+        var: ansiblespawner_out

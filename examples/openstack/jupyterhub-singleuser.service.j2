@@ -1,0 +1,18 @@
+[Unit]
+Description=JupyterHub singleuser
+
+[Service]
+User={{ user.name }}
+WorkingDirectory=/home/{{ user.name }}
+#Environment=PATH=/home/{{ user.name }}/venv/bin:/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin
+Environment=PATH=/opt/jupyter/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin
+
+{% for item in spawner_environment %}
+Environment={{ item }}={{ spawner_environment[item] }}
+{% endfor %}
+
+#ExecStart={% if not command[0].startswith("/") %}/home/{{ user.name }}/venv/bin/{% endif %}{% for item in command %}{{ item | quote }} {% endfor %} "--ip=*" --debug
+ExecStart={% if not command[0].startswith("/") %}/opt/jupyter/bin/{% endif %}{% for item in command %}{{ item | quote }} {% endfor %} "--ip=*" --debug
+
+[Install]
+WantedBy=default.target

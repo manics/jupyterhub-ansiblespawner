@@ -1,0 +1,170 @@
+- name: openstack update
+  hosts: jupyter-{{ user.name }}
+  become: true
+  gather_facts: no
+
+  tasks:
+
+    # If this VM was newly created it may not be ready
+    - name: Wait for system to become reachable
+      wait_for_connection:
+
+    - name: Gather facts for first time
+      setup:
+
+    - name: Install EPEL
+      dnf:
+        name:
+          - epel-release
+
+    - name: Install Python 3
+      dnf:
+        name:
+          - python3
+          - python3-pip
+          - python3-virtualenv
+        state: present
+
+    - name: Create jupyter user
+      user:
+        name: "{{ jupyter_user }}"
+
+    # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/security-enhanced_linux/sect-security-enhanced_linux-targeted_policy-unconfined_processes
+    # Do this at the start so that when the venv is created it picks up the new context,
+    # otherwise need to run restorecon
+    # - name: Override selinux type
+    #   sefcontext:
+    #     setype: unconfined_exec_t
+    #     state: present
+    #     target: /home/{{ user.name }}/venv/bin/.*
+
+    - name: Create jupyter directory owner by user
+      file:
+        path: /opt/jupyter
+        owner: "{{ jupyter_user }}"
+        state: directory
+
+    - name: Install jupyter
+      become_user: "{{ jupyter_user }}"
+      pip:
+        name:
+          - notebook
+          - jupyterhub
+          - jupyterlab
+        state: present
+        # virtualenv: /home/{{ jupyter_user }}/venv
+        virtualenv: /opt/jupyter
+        virtualenv_python: /usr/bin/python3
+
+    # Enable systemd user service without login
+    # Doesn't work :-(
+
+    # - name: Check if linger enabled
+    #   stat:
+    #     path: /var/lib/systemd/linger/{{ jupyter_user }}
+    #   register: _linger_enabled
+
+    # - name: Enable systemd linger for user
+    #   command: loginctl enable-linger {{ jupyter_user }}
+    #   when: not _linger_enabled.stat.exists
+
+    # - name: Create systemd user directory
+    #   become_user: "{{ jupyter_user }}"
+    #   file:
+    #     path: /home/{{ jupyter_user }}/.config/systemd/user/
+    #     recurse: true
+    #     state: directory
+
+    # - name: Create systemd singleuser service
+    #   become_user: "{{ jupyter_user }}"
+    #   template:
+    #     dest: /home/{{ jupyter_user }}/.config/systemd/user/jupyterhub-singleuser.service
+    #     src: jupyterhub-singleuser.service.j2
+
+    # - name: Start systemd singleuser service
+    #   become_user: "{{ jupyter_user }}"
+    #   systemd:
+    #     daemon_reload: true
+    #     enabled: true
+    #     name: jupyterhub-singleuser
+    #     scope: user
+    #     state: started
+
+    # Update selinux policy to allow systemd to run user executables
+    # Note class permissions can be found under /sys/fs/selinux/class/*/
+    # - name: Create selinux type enforcement file
+    #   copy:
+    #     content: |-
+    #       module init_user_jupyter 1.0;
+    #       require {
+    #         # type init_t;
+    #         # type user_home_t;
+    #         # type transproxy_port_t;
+    #         # class file { execute execute_no_trans ioctl map open read };
+    #         # class lnk_file { getattr read };
+    #         # class tcp_socket { name_connect };
+    #         type init_t;
+    #         type unconfined_exec_t;
+    #         class file { execute open read };
+    #       }
+    #       # allow init_t user_home_t:file { execute execute_no_trans ioctl map open read };
+    #       # allow init_t user_home_t:lnk_file { getattr read };
+    #       # allow init_t transproxy_port_t:tcp_socket { name_connect };
+    #       allow init_t unconfined_exec_t:file { execute open read };
+    #     dest: /root/init_user_jupyter.te
+    #   register: _selinux_te
+
+    # - name: Create selinux policy module
+    #   command: checkmodule -M -m -o /root/init_user_jupyter.mod /root/init_user_jupyter.te
+    #   args:
+    #     creates: /root/init_user_jupyter.{{ _selinux_te.checksum }}
+
+    # - name: Compile selinux policy
+    #   command: semodule_package -o /root/init_user_jupyter.pp -m /root/init_user_jupyter.mod
+    #   args:
+    #     creates: /root/init_user_jupyter.{{ _selinux_te.checksum }}
+
+    # - name: Deploy selinux policy
+    #   command: semodule -i /root/init_user_jupyter.pp
+    #   args:
+    #     creates: /root/init_user_jupyter.{{ _selinux_te.checksum }}
+
+    # - name: Create selinux flag file
+    #   copy:
+    #     content: ""
+    #     dest: /root/init_user_jupyter.{{ _selinux_te.checksum }}
+    #   notify:
+    #     - restart jupyterhub-singleuser
+
+    - name: Create systemd singleuser service
+      template:
+        dest: /etc/systemd/system/jupyterhub-singleuser.service
+        src: jupyterhub-singleuser.service.j2
+      # TODO: https://dabase.com/e/17004/
+      # systemd-analyze verify jupyterhub-singleuser.service
+      notify:
+        - restart jupyterhub-singleuser
+
+    - name: Start systemd singleuser service
+      systemd:
+        daemon_reload: true
+        enabled: true
+        name: jupyterhub-singleuser
+        state: started
+
+    # Set a fact "ansiblespawner_out" to pass variables back to the spawner
+    # This will be merged with ansiblespawner_out from create.yml
+    - set_fact:
+        ansiblespawner_out:
+          port: 8888
+
+  handlers:
+
+    - name: restart jupyterhub-singleuser
+      systemd:
+        name: jupyterhub-singleuser
+        state: restarted
+
+  vars:
+    jupyter_user: "{{ user.name }}"
+  #   ansible_python_interpreter: /opt/conda/bin/python

@@ -1,0 +1,15 @@
+all:
+  hosts:
+    localhost:
+      ansible_connection: local
+      # This must be the environment that contains Ansible and openstacksdk
+      ansible_python_interpreter: /opt/miniconda3/envs/jupyterhub/bin/python
+{% if serverinfo %}
+    jupyter-{{ user.name }}:
+      ansible_host: {{ serverinfo.ip }}
+      ansible_user: centos
+      ansible_ssh_private_key_file: {{ ansible_srcdir }}jupyter-id_rsa.pem
+      ansible_ssh_common_args: >-
+        -o StrictHostKeyChecking=no
+        -o UserKnownHostsFile=/dev/null
+{% endif %}
