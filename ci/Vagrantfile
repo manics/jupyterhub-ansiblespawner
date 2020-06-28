@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "generic/ubuntu1804"
+  config.vm.box = "generic/ubuntu2004"
 
   # config.vm.network "forwarded_port", guest: 80, host: 8080
   # config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
@@ -18,14 +18,7 @@ Vagrant.configure("2") do |config|
     lv.random_hostname = true
   end
 
-  config.vm.synced_folder "../", "/jupyterhub-ansiblespawner"
+  config.vm.synced_folder "../", "/home/vagrant/jupyterhub-ansiblespawner"
 
-  config.vm.provision "shell", inline: <<-SHELL
-    apt-get update
-    apt-get install -q -y docker.io npm python3 python3-pip python3-venv
-    npm install -g configurable-http-proxy
-    usermod -aG docker vagrant
-    echo 'user.max_user_namespaces=65536' > /etc/sysctl.d/90-podman.conf
-    su vagrant -c "python3 -mvenv ~/venv"
-  SHELL
+  config.vm.provision "shell", path: "ubuntu-dependencies.sh"
 end
