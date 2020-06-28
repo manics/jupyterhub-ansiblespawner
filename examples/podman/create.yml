@@ -21,4 +21,12 @@
         ansiblespawner_out:
           container: "{{ container_info.container }}"
           ip: 127.0.0.1
-          port: "{{ container_info.container.NetworkSettings.Ports.0.hostPort }}"
+          # Podman 2 vs 1
+          port: >-
+            {{
+              container_info.container.NetworkSettings.Ports is mapping |
+              ternary(
+                container_info.container.NetworkSettings.Ports["8888/tcp"].0.HostPort,
+                container_info.container.NetworkSettings.Ports.0.hostPort
+              )
+            }}
