@@ -273,7 +273,6 @@ class AnsibleSpawner(Spawner):
                     ansiblespawner_out.update(
                         e["event_data"]["res"]["ansible_facts"]["ansiblespawner_out"]
                     )
-                    break
                 except KeyError:
                     continue
 
