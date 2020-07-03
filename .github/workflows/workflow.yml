@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Enable rootless podman
+        if: ${{ matrix.pytestmark == 'not docker' }}
         run: |
           sudo apt-get update -q
           sudo apt-get install -q -y fuse-overlayfs
@@ -50,7 +51,6 @@ jobs:
         run: |
           python -m pip install -r dev-requirements.txt
           npm install -g configurable-http-proxy
-      - run: env | sort
       - name: Update setuptools_scm version
         run: python setup.py build
       - name: Install Ansible requirements
@@ -69,3 +69,21 @@ jobs:
         with:
           file: ./coverage.xml
           # fail_ci_if_error: true
+
+  # https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
+  publish-pypi:
+    name: Pypi
+    if: startsWith(github.ref, 'refs/tags')
+    needs:
+      # Only publish if other jobs passed
+      - pre-commit
+      - test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - run: python setup.py sdist bdist_wheel
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1
+        with:
+          password: ${{ secrets.PYPI_PASSWORD }}

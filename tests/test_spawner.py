@@ -45,6 +45,14 @@ async def test_integration(app):
         await gen.sleep(2.0)
         resp = await api_request(app, "users", "alice", "server", method="post")
 
+    # check progress events were emitted
+    count = 0
+    async for e in alice.spawner.progress():
+        count += 1
+        assert e["message"].startswith("playbook_on_")
+    # Actual number of events obviously depends on the playbook
+    assert count >= 5
+
     # Check that everything is running fine
     url = url_path_join(public_url(app, alice), "api/status")
     resp = await async_requests.get(url, headers={"Authorization": "token %s" % token})

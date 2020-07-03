@@ -2,7 +2,7 @@
 from collections import namedtuple
 import os
 import pytest
-from tempfile import gettempdir
+from tempfile import gettempdir, TemporaryDirectory
 import yaml
 
 from ansiblespawner import AnsibleSpawner, AnsibleException
@@ -209,3 +209,14 @@ async def test_get_extravars(monkeypatch, playbook_vars):
 
     vars = await a._get_extravars()
     assert vars == expected
+
+
+@pytest.mark.parametrize("keep_temp_dirs", [True, False])
+def test_cleanup_tmpdir(keep_temp_dirs):
+    a = AnsibleSpawner()
+    a.keep_temp_dirs = keep_temp_dirs
+    tmpdir = TemporaryDirectory()
+
+    a._cleanup_tmpdir(tmpdir)
+    assert os.path.isdir(tmpdir.name) == keep_temp_dirs
+    tmpdir.cleanup()

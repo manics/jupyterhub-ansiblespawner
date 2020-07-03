@@ -1,0 +1,60 @@
+---
+- name: Install jupyterhub
+  hosts: jupyterhub
+  become: true
+
+  pre_tasks:
+
+    - name: Install packages
+      package:
+        name:
+          - git
+          - screen
+
+    - name: Create miniconda folder
+      file:
+        path: /opt/miniconda3
+        state: directory
+
+    - name: Download miniconda
+      get_url:
+        url: https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.2-Linux-x86_64.sh
+        dest: /opt/miniconda3/installer.sh
+        checksum: sha256:957d2f0f0701c3d1335e3b39f235d197837ad69a944fa6f5d8ad2c686b69df3b
+        mode: 0555
+
+    - name: Run miniconda installer
+      command: /opt/miniconda3/installer.sh -b -u -p /opt/miniconda3
+      args:
+        creates: "{{ conda_installed_flag_file }}"
+
+    - name: Create flag to indicate installation complete
+      template:
+        dest: "{{ conda_installed_flag_file }}"
+        src: flag.j2
+
+  roles:
+
+    - role: evandam.conda
+
+  tasks:
+
+    # TODO: This isn't idempotent :-(
+    - name: Create jupyterhub environment
+      conda:
+        channels:
+          - defaults
+          - conda-forge
+        name:
+          - python=3.7
+          - jupyterhub=1.1
+          - ansible=2.9
+          - ansible-runner=1.4
+          - docker-py=4.2  # for Ansible Docker modules
+          - shade=1.33  # for Ansible Openstack modules
+        environment: jupyterhub
+        executable: /opt/miniconda3/bin/conda
+        state: present
+
+  vars:
+    conda_installed_flag_file: /opt/miniconda3/miniconda3-py37_4.8.2.txt

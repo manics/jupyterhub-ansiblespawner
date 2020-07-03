@@ -1,0 +1,6 @@
+---
+# ansible-galaxy role install -p roles -r requirements.yml
+roles:
+  # https://github.com/evandam/evandam.conda
+  - name: evandam.conda
+    version: v1.2.0
