@@ -82,7 +82,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
-      - run: python setup.py sdist bdist_wheel
+      - name: Build package
+        run: |
+          python -mpip install wheel
+          python setup.py sdist bdist_wheel
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.3.0
         with:
