@@ -1,0 +1,28 @@
+--- collections/ansible_collections/containers/podman/plugins/connection/podman.py.orig	2020-07-05 17:01:17.474000000 +0100
++++ collections/ansible_collections/containers/podman/plugins/connection/podman.py	2020-07-05 17:05:27.845489253 +0100
+@@ -11,6 +11,7 @@
+ __metaclass__ = type
+ 
+ import distutils.spawn
++import os
+ import shlex
+ import shutil
+ import subprocess
+@@ -166,7 +167,7 @@
+         """ Place a local file located in 'in_path' inside container at 'out_path' """
+         super(Connection, self).put_file(in_path, out_path)
+         display.vvv("PUT %s TO %s" % (in_path, out_path), host=self._container_id)
+-        if not self._mount_point or self.user:
++        if not self._mount_point or self.user or not os.listdir(self._mount_point):
+             rc, stdout, stderr = self._podman(
+                 "cp", [in_path, self._container_id + ":" + out_path], use_container_id=False
+             )
+@@ -190,7 +191,7 @@
+         """ obtain file specified via 'in_path' from the container and place it at 'out_path' """
+         super(Connection, self).fetch_file(in_path, out_path)
+         display.vvv("FETCH %s TO %s" % (in_path, out_path), host=self._container_id)
+-        if not self._mount_point:
++        if not self._mount_point or not os.listdir(self._mount_point):
+             rc, stdout, stderr = self._podman(
+                 "cp", [self._container_id + ":" + in_path, out_path], use_container_id=False)
+             if rc != 0:
