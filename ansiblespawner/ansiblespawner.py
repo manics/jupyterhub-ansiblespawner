@@ -14,12 +14,22 @@ from re import sub as re_sub
 import tempfile
 from traitlets import Bool, Dict, Instance, Unicode, Union
 
+from typing import (
+    Any as AnyT,
+    AsyncGenerator as AsyncGeneratorT,
+    Dict as DictT,
+    List as ListT,
+    Tuple as TupleT,
+    Union as UnionT,
+)
+
+JsonT = DictT[str, AnyT]
 
 logger = logging.getLogger(__name__)
 
 
 class AnsibleException(Exception):
-    def __init__(self, message, runner):
+    def __init__(self, message: str, runner: ansible_runner.Runner):
         super().__init__(message)
         self.rc = runner.rc
         self.status = runner.status
@@ -178,7 +188,9 @@ class AnsibleSpawner(Spawner):
         """,
     )
 
-    async def ansible_async(self, loop, **kwargs):
+    async def ansible_async(
+        self, loop: asyncio.AbstractEventLoop, **kwargs
+    ) -> ansible_runner.Runner:
         """
         Wrap ansible_runner.run_async so it can be used with asyncio
         loop: The event loop
@@ -192,7 +204,7 @@ class AnsibleSpawner(Spawner):
 
         future = loop.create_future()
 
-        def finished_callback(runner):
+        def finished_callback(runner: ansible_runner.Runner):
             self.log.debug(f"finished_callback: {runner}")
             loop.call_soon_threadsafe(future.set_result, runner)
 
@@ -203,8 +215,13 @@ class AnsibleSpawner(Spawner):
         t.join()
         return result
 
-    async def run_ansible(self, loop, inventory, **kwargs):
-        ansible_kwargs = dict(quiet=True,)
+    async def run_ansible(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        inventory: UnionT[JsonT, TupleT[str, str]],
+        **kwargs,
+    ) -> JsonT:
+        ansible_kwargs: JsonT = dict(quiet=True,)
         # Use temporary artifacts dir otherwise the events seem to accumulate from
         # previous runs
         tmpdir = None
@@ -227,7 +244,7 @@ class AnsibleSpawner(Spawner):
 
         ansible_kwargs.update(kwargs)
 
-        def log_event_handler(e):
+        def log_event_handler(e: JsonT) -> bool:
             self.log.debug(e["event"] + (("\n" + e["stdout"]) if "stdout" in e else ""))
             # Needs to return True otherwise the event is discarded
             # https://github.com/ansible/ansible-runner/blob/1.4.6/ansible_runner/runner.py#L69
@@ -236,7 +253,7 @@ class AnsibleSpawner(Spawner):
         if "event_handler" in ansible_kwargs:
             event_handler = ansible_kwargs["event_handler"]
 
-            def user_event_handler(e, finished=False):
+            def user_event_handler(e: JsonT, finished=False) -> bool:
                 log_event_handler(e)
                 return event_handler(e)
 
@@ -244,7 +261,9 @@ class AnsibleSpawner(Spawner):
         else:
             ansible_kwargs["event_handler"] = log_event_handler
 
-        def status_handler(s, runner_config):
+        def status_handler(
+            s: JsonT, runner_config: ansible_runner.RunnerConfig
+        ) -> bool:
             self.log.info("Ansible status: %s", s)
             return True
 
@@ -286,17 +305,17 @@ class AnsibleSpawner(Spawner):
             tmpdir=tmpdir,
         )
 
-    def _cleanup_tmpdir(self, tmpdir):
+    def _cleanup_tmpdir(self, tmpdir: tempfile.TemporaryDirectory) -> None:
         if self.keep_temp_dirs:
             self.log.info(f"Not deleting tmpdir {tmpdir.name}")
         else:
             tmpdir.cleanup()
 
-    def _env_keep_default(self):
+    def _env_keep_default(self) -> list:
         """Don't inherit any env from the parent process"""
         return []
 
-    async def _get_inventory(self):
+    async def _get_inventory(self) -> TupleT[str, str]:
         args = await self._get_extravars()
         if callable(self.inventory):
             return self.inventory(**args)
@@ -307,7 +326,7 @@ class AnsibleSpawner(Spawner):
             content = Template(f.read()).render(**args)
         return filename, content
 
-    def _get_command(self):
+    def _get_command(self) -> ListT[str]:
         """
         A list containing the command to run with arguments
         """
@@ -316,7 +335,7 @@ class AnsibleSpawner(Spawner):
         cmd.extend(self.get_args())
         return cmd
 
-    def _get_user(self):
+    def _get_user(self) -> JsonT:
         """
         A JSON serialisable user object containing a subset of fields from the
         User object
@@ -325,7 +344,7 @@ class AnsibleSpawner(Spawner):
         # https://github.com/jupyterhub/jupyterhub/blob/1.0.0/jupyterhub/orm.py#L147
         return dict(escaped_name=self.user.escaped_name, name=self.user.name,)
 
-    async def _get_extravars(self):
+    async def _get_extravars(self) -> JsonT:
         vars = {
             "command": self._get_command(),
             "serverinfo": self.serverinfo or {},
@@ -339,17 +358,18 @@ class AnsibleSpawner(Spawner):
                 vars.update(self.playbook_vars)
         return vars
 
-    def load_state(self, state):
+    def load_state(self, state: dict) -> None:
         super().load_state(state)
         self.serverinfo = state.get("serverinfo")
 
-    def get_state(self):
+    def get_state(self) -> JsonT:
         state = super().get_state()
         if self.serverinfo:
             state["serverinfo"] = self.serverinfo
         return state
 
-    async def start(self):
+    async def start(self) -> TupleT[str, int]:
+        self.port: int
         if not self.port:
             self.port = 8888
 
@@ -360,7 +380,9 @@ class AnsibleSpawner(Spawner):
 
         # When starting we want to show progress messages.
         # Ansible async runs in a separate thread
-        def event_handler(loop, queue, e):
+        def event_handler(
+            loop: asyncio.AbstractEventLoop, queue: asyncio.Queue, e: JsonT,
+        ):
             # Remove colour escape codes
             m = e["event"] + (
                 (": " + re_sub(r"\x1b[^m]*m", "", e["stdout"])) if "stdout" in e else ""
@@ -409,7 +431,7 @@ class AnsibleSpawner(Spawner):
         self.events.put_nowait(None)
         return ip, port
 
-    async def stop(self, now=False):
+    async def stop(self, now=False) -> None:
         # TODO or not bother?
         #   now=False (default), shutdown the server gracefully
         #   now=True, terminate the server immediately.
@@ -429,7 +451,7 @@ class AnsibleSpawner(Spawner):
         )
         self._cleanup_tmpdir(destroy["tmpdir"])
 
-    async def poll(self):
+    async def poll(self) -> UnionT[None, int]:
         # None: single-user process is running.
         # Integer: not running, return exit status (0 if unknown)
         # Spawner not initialized: behave as not running (0).
@@ -457,7 +479,7 @@ class AnsibleSpawner(Spawner):
             return None
         return 0
 
-    async def progress(self):
+    async def progress(self) -> AsyncGeneratorT[int, None]:
         """
         https://github.com/jupyterhub/jupyterhub/blob/1.1.0/jupyterhub/spawner.py#L1009-L1032
         """
