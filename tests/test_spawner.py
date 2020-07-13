@@ -44,6 +44,7 @@ async def test_integration(app):
     while resp is None or resp.status_code == 202:
         await gen.sleep(2.0)
         resp = await api_request(app, "users", "alice", "server", method="post")
+    assert resp.ok
 
     # check progress events were emitted
     count = 0
