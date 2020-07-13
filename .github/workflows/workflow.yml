@@ -57,8 +57,6 @@ jobs:
         run: |
           cd examples/podman
           ansible-galaxy collection install -p collections -r requirements.yml
-          # Work around https://github.com/containers/ansible-podman-collections/issues/70
-          patch -p0 < connection-podman-mount.patch
           cd ../..
       - name: Run tests
         run: pytest --cov=ansiblespawner tests -v -m "${{ matrix.pytestmark }}" --cov-report=xml --cov-report=term-missing --cov-fail-under=95
