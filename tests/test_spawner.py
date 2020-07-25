@@ -44,6 +44,12 @@ async def test_integration(app):
     while resp is None or resp.status_code == 202:
         await gen.sleep(2.0)
         resp = await api_request(app, "users", "alice", "server", method="post")
+    # https://github.com/jupyterhub/jupyterhub/blob/1.1.0/docs/rest-api.yml#L236-L259
+    # https://github.com/jupyterhub/jupyterhub/blob/1.1.0/jupyterhub/apihandlers/users.py#L411
+    assert resp.ok or resp.json() == {
+        "status": 400,
+        "message": "alice is already running",
+    }
 
     # check progress events were emitted
     count = 0
