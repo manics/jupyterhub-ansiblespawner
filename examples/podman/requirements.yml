@@ -1,6 +1,6 @@
 ---
 # ansible-galaxy collection install -p collections -r requirements.yml
 collections:
+  # https://galaxy.ansible.com/containers/podman
   - name: containers.podman
-    version: 1.0.4
-    # source: https://galaxy.ansible.com
+    version: 1.1.1
