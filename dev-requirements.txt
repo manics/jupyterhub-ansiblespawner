@@ -1,5 +1,5 @@
 # These are automatically bumped by dependabot
-ansible==2.9.13
+ansible==2.10.0
 ansible-runner==1.4.6
 codecov==2.1.10
 docker==4.3.1
