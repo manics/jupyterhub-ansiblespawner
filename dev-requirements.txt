@@ -5,7 +5,7 @@ codecov==2.1.10
 docker==4.3.1
 jupyterhub==1.1.0
 notebook==6.1.4
-pre-commit==2.7.1
+pre-commit==2.8.2
 pytest==6.1.1
 pytest-asyncio==0.14.0
 pytest-cov==2.10.1
