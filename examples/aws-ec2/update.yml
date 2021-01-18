@@ -1,0 +1,80 @@
+- name: ec2 update
+  hosts: jupyter-{{ user.name }}
+  become: true
+  gather_facts: no
+
+  tasks:
+
+    # If this VM was newly created it may not be ready
+    - name: Wait for system to become reachable
+      wait_for_connection:
+
+    - name: Gather facts for first time
+      setup:
+
+    - name: Install EPEL
+      dnf:
+        name:
+          - epel-release
+
+    - name: Install Python 3
+      dnf:
+        name:
+          - python3
+          - python3-pip
+          - python3-virtualenv
+        state: present
+
+    - name: Create jupyter user
+      user:
+        name: "{{ jupyter_user }}"
+
+    - name: Create jupyter directory owner by user
+      file:
+        path: /opt/jupyter
+        owner: "{{ jupyter_user }}"
+        state: directory
+
+    - name: Install jupyter
+      become_user: "{{ jupyter_user }}"
+      pip:
+        name:
+          - notebook
+          - jupyterhub
+          - jupyterlab
+        state: present
+        virtualenv: /opt/jupyter
+        virtualenv_python: /usr/bin/python3
+
+    - name: Create systemd singleuser service
+      template:
+        dest: /etc/systemd/system/jupyterhub-singleuser.service
+        src: jupyterhub-singleuser.service.j2
+      # TODO: https://dabase.com/e/17004/
+      # systemd-analyze verify jupyterhub-singleuser.service
+      notify:
+        - restart jupyterhub-singleuser
+
+    - name: Start systemd singleuser service
+      systemd:
+        daemon_reload: true
+        enabled: true
+        name: jupyterhub-singleuser
+        state: started
+
+    # Set a fact "ansiblespawner_out" to pass variables back to the spawner
+    # This will be merged with ansiblespawner_out from create.yml
+    - set_fact:
+        ansiblespawner_out:
+          port: 8888
+
+  handlers:
+
+    - name: restart jupyterhub-singleuser
+      systemd:
+        name: jupyterhub-singleuser
+        state: restarted
+
+  vars:
+    jupyter_user: "{{ user.name }}"
+  #   ansible_python_interpreter: /opt/conda/bin/python

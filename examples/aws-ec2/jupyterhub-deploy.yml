@@ -1,0 +1,70 @@
+---
+
+- name: Install jupyterhub
+  hosts: jupyterhub
+  become: true
+
+  pre_tasks:
+
+    - wait_for_connection:
+
+    # https://docs.conda.io/projects/conda/en/latest/user-guide/install/rpm-debian.html
+    - name: Add conda yum repository
+      yum_repository:
+        name: conda
+        description: Anaconda conda
+        baseurl: https://repo.anaconda.com/pkgs/misc/rpmrepo/conda
+        gpgkey: https://repo.anaconda.com/pkgs/misc/gpgkeys/anaconda.asc
+
+    - name: Upgrade packages
+      yum:
+        name: '*'
+        state: latest
+
+    - name: Install packages
+      package:
+        name:
+          - conda
+          - git
+          - screen
+        state: present
+
+  roles:
+
+    - role: evandam.conda
+
+  tasks:
+
+    # conda runs out of memory on an AWS EC2 t2.micro instance so use mamba
+
+    - name: Install mamba
+      conda:
+        channels:
+          - defaults
+          - conda-forge
+        name:
+          - mamba=0.7
+        # Specifying an environment makes this non-idempotent 😞
+        # environment: jupyterhub
+        executable: /opt/conda/bin/conda
+        state: present
+
+    - name: Install Jupyterhub
+      conda:
+        channels:
+          - defaults
+          - conda-forge
+        name:
+          - python=3.8
+          - jupyterhub=1.3
+          - oauthenticator=0.12
+          - ansible=2.10
+          - ansible-runner=1.4
+          - boto3=1.16  # for Ansible AWS modules
+          - docker-py=4.2  # for Ansible Docker modules
+          - shade=1.33  # for Ansible Openstack modules
+        # Specifying an environment makes this non-idempotent 😞
+        # environment: jupyterhub
+        # executable: /opt/conda/envs/jupyterhub/bin/mamba
+        executable: /opt/conda/bin/mamba
+        state: present
