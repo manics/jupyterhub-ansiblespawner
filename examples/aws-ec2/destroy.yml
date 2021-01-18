@@ -1,0 +1,13 @@
+- name: ec2 destroy
+  hosts: localhost
+  tasks:
+
+    - name: Delete instance
+      community.aws.ec2_instance:
+        filters:
+          # https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+          tag:Name: jupyter-{{ user.name }}
+          # instance-state-name: running
+          tag:app: jupyter-ansiblespawner
+        name: jupyter-{{ user.name }}
+        state: absent
