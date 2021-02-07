@@ -29,7 +29,7 @@
       service_facts:
 
     - debug:
-        msg: "{{ ansible_facts.services['jupyterhub-singleuser.service'] }}"
+        msg: "{{ ansible_facts.services['jupyterhub-singleuser.service'] | default('jupyterhub-singleuser.service missing') }}"
 
     # Overrides the "running" field from "ansiblespawner_out" in the previous play
     - set_fact:

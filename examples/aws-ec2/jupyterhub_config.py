@@ -1,5 +1,7 @@
 import os
+import socket
 
+local_ip = socket.gethostbyname(socket.gethostname())
 ansible_path = os.path.abspath(os.path.dirname(__file__)) + "/"
 
 c.JupyterHub.spawner_class = "ansible"
@@ -13,9 +15,12 @@ c.AnsibleSpawner.destroy_playbook = ansible_path + "destroy.yml"
 
 c.AnsibleSpawner.playbook_vars = {
     "ansible_srcdir": ansible_path,
+    # TODO: set this in jupyterhub-deployment.yml
+    "key_name": "jupyter",
+    "subnet_id": "subnet-TODO",
 }
 c.AnsibleSpawner.start_timeout = 600
 c.AnsibleSpawner.keep_temp_dirs = True
 
 c.JupyterHub.authenticator_class = "dummy"
-c.JupyterHub.hub_connect_ip = "192.168.1.1"
+c.JupyterHub.hub_connect_ip = local_ip

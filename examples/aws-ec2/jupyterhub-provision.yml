@@ -67,6 +67,15 @@
         state: "{{ state }}"
         tags: "{{ default_tags }}"
 
+    # TODO: Disable public IP in create.yml and use NAT
+    # https://docs.ansible.com/ansible/latest/collections/community/aws/ec2_vpc_nat_gateway_module.html
+    # - name: Create NAT gateway for internal instances
+    #   community.aws.ec2_vpc_nat_gateway:
+    #     state: "{{ state }}"
+    #     subnet_id: "{{ _subnet.subnet.id }}"
+    #     wait: true
+    #     wait_timeout: "{{ wait_timeout }}"
+
     # https://docs.ansible.com/ansible/latest/collections/community/aws/iam_role_module.html
     - name: Create IAM role and instance profile
       community.aws.iam_role:
@@ -97,6 +106,9 @@
     - name: Create instance
       community.aws.ec2_instance:
         image_id: "{{ cloud_baseimage }}"
+        # ARN doesn't seem to work, so use name
+        # instance_role: "{{ _role.arn }}"
+        instance_role: jupyterhub-ansiblespawner
         instance_type: t2.micro
         filters:
           # https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
@@ -111,26 +123,28 @@
           - jupyter-ansiblespawner
         vpc_subnet_id: "{{ _subnet.subnet.id }}"
         wait: true
-        wait_timeout: 300
+        wait_timeout: "{{ wait_timeout }}"
         state: "{{ instance_state | default(state) }}"
         tags: "{{ default_tags }}"
       register: _instance
 
     - debug: var=_instance
 
-    # - name: Create local ssh_config file
-    #   copy:
-    #     content : |
-    #       Host jupyterhub
-    #         HostName {{ _instance.instances.0.public_dns_name }}
-    #         User ec2-user
-    #         IdentityFile ./jupyter-id_rsa.pem
-    #         IdentitiesOnly yes
-    #         BatchMode yes
-    #         StrictHostKeyChecking no
-    #         UserKnownHostsFile /dev/null
-    #     dest: jupyterhub-ssh-config
-    #   delegate_to: localhost
+    # This isn't needed since the inventory is created dynamically, but you can use it
+    # to SSH in (ssh -F jupyterhub-ssh-config jupyterhub)
+    - name: Create local ssh_config file
+      copy:
+        content : |
+          Host jupyterhub
+            HostName {{ _instance.instances.0.public_dns_name }}
+            User ec2-user
+            IdentityFile ./jupyter-id_rsa.pem
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+        dest: jupyterhub-ssh-config
+      delegate_to: localhost
 
     - name: Create dynamic inventory group
       add_host:
@@ -160,6 +174,7 @@
     state: present
     # To delete instances only set
     # instance_state: absent
+    wait_timeout: 300
 
     ansible_srcdir: "{{ playbook_dir }}"
 

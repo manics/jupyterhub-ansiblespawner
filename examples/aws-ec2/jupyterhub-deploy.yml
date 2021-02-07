@@ -1,4 +1,4 @@
----
+# Install JupyterHub
 
 - name: Install jupyterhub
   hosts: jupyterhub
@@ -63,8 +63,16 @@
           - boto3=1.16  # for Ansible AWS modules
           - docker-py=4.2  # for Ansible Docker modules
           - shade=1.33  # for Ansible Openstack modules
+          - pip=21
         # Specifying an environment makes this non-idempotent 😞
         # environment: jupyterhub
         # executable: /opt/conda/envs/jupyterhub/bin/mamba
         executable: /opt/conda/bin/mamba
+        state: present
+
+    - name: Install jupyterhub-ansiblespawner
+      pip:
+        name:
+          - git+https://github.com/manics/jupyterhub-ansiblespawner.git@43cfa75f09727b0b58889005397056959368a54e
+        executable: /opt/conda/bin/pip
         state: present

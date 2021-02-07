@@ -2,8 +2,8 @@ all:
   hosts:
     localhost:
       ansible_connection: local
-      # This must be the environment that contains Ansible and openstacksdk
-      ansible_python_interpreter: /opt/miniconda3/envs/jupyterhub/bin/python
+      # This must be the environment that contains Ansible
+      ansible_python_interpreter: /opt/conda/bin/python
 {% if serverinfo %}
     jupyter-{{ user.name }}:
       ansible_host: {{ serverinfo.ip }}

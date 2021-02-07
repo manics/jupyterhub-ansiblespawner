@@ -14,7 +14,9 @@
         key_name: "{{ key_name }}"
         name: jupyter-{{ user.name }}
         network:
-          assign_public_ip: false
+          # TODO: Create a private subnet with NAT gateway instead
+          # assign_public_ip: false
+          assign_public_ip: true
         security_groups:
           - default
           - jupyter-ansiblespawner
@@ -34,7 +36,7 @@
     - set_fact:
         ansiblespawner_out:
           ec2_instance: "{{ _instance.instances.0 }}"
-          ip: "{{ _instance.instances.0.public_ip_address }}"
+          ip: "{{ _instance.instances.0.private_ip_address }}"
           # port:
 
   vars:

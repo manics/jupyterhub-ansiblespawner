@@ -12,17 +12,12 @@
     - name: Gather facts for first time
       setup:
 
-    - name: Install EPEL
-      dnf:
-        name:
-          - epel-release
-
+    # Amazon Linux: Python 3 is in the default repos, no EPEL
     - name: Install Python 3
-      dnf:
+      yum:
         name:
           - python3
           - python3-pip
-          - python3-virtualenv
         state: present
 
     - name: Create jupyter user
@@ -44,7 +39,7 @@
           - jupyterlab
         state: present
         virtualenv: /opt/jupyter
-        virtualenv_python: /usr/bin/python3
+        virtualenv_command: /usr/bin/python3 -mvenv
 
     - name: Create systemd singleuser service
       template:
