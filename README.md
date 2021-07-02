@@ -7,7 +7,7 @@
 Spawn [JupyterHub](https://github.com/jupyterhub/jupyterhub) single user notebook servers using [Ansible](https://www.ansible.com/).
 
 This spawner runs Ansible playbooks to start, manage and stop JupyterHub singleuser servers.
-This means any Ansible module can be used to orchestrate your singleuser servers, including [Docker and many public/private clouds](https://docs.ansible.com/ansible/latest/modules/list_of_cloud_modules.html), and other infrastructure platforms supported by the community.
+This means any Ansible module can be used to orchestrate your singleuser servers, including [Docker and many public/private clouds](https://docs.ansible.com/ansible/2.9/modules/list_of_cloud_modules.html), and other infrastructure platforms supported by the community.
 You can do things like create multiple storage volumes for each user, or provision additional services on other containers/VMs.
 
 
