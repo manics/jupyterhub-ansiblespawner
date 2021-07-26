@@ -22,4 +22,4 @@
         ansiblespawner_out:
           container: "{{ container_info.container }}"
           ip: 127.0.0.1
-          port: "{{ container_info.ansible_facts.docker_container.NetworkSettings.Ports['8888/tcp'].0.HostPort }}"
+          port: "{{ container_info.container.NetworkSettings.Ports['8888/tcp'].0.HostPort }}"
