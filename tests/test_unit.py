@@ -72,6 +72,8 @@ async def test_run_ansible(
         "ok": {"localhost": 2},
         "dark": {},
         "failures": {},
+        "ignored": {},
+        "rescued": {},
         "processed": {"localhost": 1},
         "changed": {},
     }
@@ -150,6 +152,8 @@ async def test_run_ansible_exception(event_loop, playbook):
             "ok": {},
             "dark": {},
             "failures": {},
+            "ignored": {},
+            "rescued": {},
             "processed": {},
             "changed": {},
         }
