@@ -97,7 +97,7 @@ async def test_run_ansible(
             p.name for p in (private_data_tmp_path / "artifacts").glob("**/*")
         )
         # May want to change this to >= N instead
-        assert len(items2) == 16
+        assert len(items2) == 17
     else:
         assert r["tmpdir"].name.startswith(
             os.path.join(gettempdir(), "ansiblespawner-")
