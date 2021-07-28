@@ -72,6 +72,8 @@ async def test_run_ansible(
         "ok": {"localhost": 2},
         "dark": {},
         "failures": {},
+        "ignored": {},
+        "rescued": {},
         "processed": {"localhost": 1},
         "changed": {},
     }
@@ -95,7 +97,7 @@ async def test_run_ansible(
             p.name for p in (private_data_tmp_path / "artifacts").glob("**/*")
         )
         # May want to change this to >= N instead
-        assert len(items2) == 16
+        assert len(items2) == 17
     else:
         assert r["tmpdir"].name.startswith(
             os.path.join(gettempdir(), "ansiblespawner-")
@@ -150,6 +152,8 @@ async def test_run_ansible_exception(event_loop, playbook):
             "ok": {},
             "dark": {},
             "failures": {},
+            "ignored": {},
+            "rescued": {},
             "processed": {},
             "changed": {},
         }
