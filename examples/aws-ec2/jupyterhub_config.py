@@ -15,9 +15,9 @@ c.AnsibleSpawner.destroy_playbook = ansible_path + "destroy.yml"
 
 c.AnsibleSpawner.playbook_vars = {
     "ansible_srcdir": ansible_path,
-    # TODO: set this in jupyterhub-deployment.yml
-    "key_name": "jupyter",
-    "subnet_id": "subnet-TODO",
+    # These will be substituted when this file is copied in jupyterhub-deploy.yml
+    "key_name": "{{ _jupyter_ec2_key_name }}",
+    "subnet_id": "{{ _jupyter_ec2_subnet }}",
 }
 c.AnsibleSpawner.start_timeout = 600
 c.AnsibleSpawner.keep_temp_dirs = True

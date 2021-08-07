@@ -28,7 +28,7 @@
     - name: Lookup VPC
       amazon.aws.ec2_vpc_net_facts:
         filters:
-          cidr: "{{ cidr }}"
+          cidr: "{{ subnet_cidr }}"
           tag:Name: jupyter-ansiblespawner
       register: _vpcs
 
@@ -40,7 +40,7 @@
 
         - name: Delete VPC subnet
           amazon.aws.ec2_vpc_subnet:
-            cidr: "{{ cidr }}"
+            cidr: "{{ subnet_cidr }}"
             vpc_id: "{{ _vpcs.vpcs.0.vpc_id }}"
             state: absent
 
@@ -50,17 +50,37 @@
             vpc_id: "{{ _vpcs.vpcs.0.vpc_id }}"
             state: absent
 
+        # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_route_table_info_module.rst
+        - name: Find route tables which reference this VPC
+          community.aws.ec2_vpc_route_table_info:
+            filters:
+              vpc-id: "{{ _vpcs.vpcs.0.vpc_id }}"
+          register: _route_tables
+
+        # # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_route_table_module.rst
+        # - name: Remove routes from route tables
+        #   community.aws.ec2_vpc_route_table:
+        #     lookup: id
+        #     route_table_id: "{{ item.id }}"
+        #     routes: []
+        #     subnets: []
+        #     vpc_id: "{{ _vpcs.vpcs.0.vpc_id }}"
+        #   with_items: "{{ _route_tables.route_tables }}"
+
         # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_route_table_module.rst
         - name: Delete external routing
           community.aws.ec2_vpc_route_table:
-            vpc_id: "{{ _vpcs.vpcs.0.vpc_id }}"
+            lookup: id
+            route_table_id: "{{ item.id }}"
             state: absent
+          with_items: "{{ _route_tables.route_tables }}"
+          ignore_errors: true
 
       when: (_vpcs.vpcs | length) > 0
 
     - name: Delete VPC
       amazon.aws.ec2_vpc_net:
-        cidr_block: "{{ cidr }}"
+        cidr_block: "{{ subnet_cidr }}"
         name: jupyter-ansiblespawner
         state: absent
 
@@ -77,11 +97,10 @@
     - name: Delete IAM role and instance profile
       community.aws.iam_role:
         name: jupyterhub-ansiblespawner
-        path: /jupyterhub/jupyterhub-ansiblespawner/
+        path: /jupyterhub/
+        delete_instance_profile: true
         state: absent
 
-    # This isn't needed since the inventory is created dynamically, but you can use it
-    # to SSH in (ssh -F jupyterhub-ssh-config jupyterhub)
     - name: Delete local ssh_config file
       copy:
         content : |
@@ -89,7 +108,7 @@
       delegate_to: localhost
 
   vars:
-    cidr: 172.30.1.0/24
+    subnet_cidr: 172.30.1.0/24
     # default_tags:
     #   app: jupyter-ansiblespawner
     #   creator: ansible

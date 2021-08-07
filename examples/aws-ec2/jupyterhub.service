@@ -1,0 +1,12 @@
+[Unit]
+Description=Jupyterhub
+
+[Service]
+User=jupyterhub
+Environment=AWS_DEFAULT_REGION=eu-west-1
+Environment=PATH=/opt/conda/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin
+ExecStart=/opt/conda/bin/jupyterhub --debug -f jupyterhub_config.py
+WorkingDirectory=/opt/jupyterhub
+
+[Install]
+WantedBy=multi-user.target
