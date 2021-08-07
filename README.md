@@ -36,7 +36,14 @@ c.AnsibleSpawner.start_timeout = 600
 c.JupyterHub.hub_connect_ip = "10.0.0.1"
 ```
 
-See the example playbooks under [`./examples`](./examples)
+## Examples
+
+Example playbooks and configurations can be found under [`examples`](https://github.com/manics/jupyterhub-ansiblespawner/tree/main/examples).
+
+- [AWS EC2](https://github.com/manics/jupyterhub-ansiblespawner/tree/main/examples/aws-ec2)
+- [Docker](https://github.com/manics/jupyterhub-ansiblespawner/tree/main/examples/docker)
+- [Podman](https://github.com/manics/jupyterhub-ansiblespawner/tree/main/examples/podman)
+- [Openstack](https://github.com/manics/jupyterhub-ansiblespawner/tree/main/examples/openstack)
 
 ## Development
 
