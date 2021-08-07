@@ -1,7 +1,6 @@
 - hosts: localhost
   gather_facts: false
   tasks:
-
     - name: set ansiblespawner_output 1
       set_fact:
         ansiblespawner_output:

@@ -1,7 +1,6 @@
 - name: ec2 destroy
   hosts: localhost
   tasks:
-
     - name: Delete instance
       community.aws.ec2_instance:
         filters:

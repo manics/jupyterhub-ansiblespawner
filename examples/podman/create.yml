@@ -1,7 +1,6 @@
 - name: podman create
   hosts: localhost
   tasks:
-
     - containers.podman.podman_container:
         name: jupyter-{{ user.name }}
         state: started

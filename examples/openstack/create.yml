@@ -1,7 +1,6 @@
 - name: openstack create
   hosts: localhost
   tasks:
-
     - os_keypair:
         name: jupyter
         public_key_file: "{{ ssh_public_key }}"

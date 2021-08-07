@@ -4,7 +4,6 @@
 - name: ec2 provision jupyterhub
   hosts: localhost
   tasks:
-
     - name: SSH key
       amazon.aws.ec2_key:
         key_material: "{{ lookup('file', ssh_public_key) }}"
@@ -138,7 +137,7 @@
     # to SSH in (ssh -F jupyterhub-ssh-config jupyterhub)
     - name: Create local ssh_config file
       copy:
-        content : |
+        content: |
           Host jupyterhub
             HostName {{ _instance.instances.0.public_dns_name }}
             User ec2-user
@@ -173,7 +172,6 @@
         jupyter_ec2_subnet: "{{ _subnet.subnet.id }}"
         jupyter_ec2_key_name: "{{ jupyter_ec2_key_name }}"
 
-
   vars:
     subnet_cidr: 172.30.1.0/24
     cloud_baseimage: "resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
@@ -191,14 +189,11 @@
 
     ansible_srcdir: "{{ playbook_dir }}"
 
-
 - import_playbook: jupyterhub-deploy.yml
-
 
 - name: Display JupyterHub hostname and IP
   hosts: localhost
   tasks:
-
     - debug:
         msg: |-
           JupyterHub should be running at http://{{ _instance.instances.0.public_dns_name }}:8000

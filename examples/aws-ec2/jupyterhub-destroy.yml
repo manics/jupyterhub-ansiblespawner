@@ -4,7 +4,6 @@
 - name: ec2 destroy jupyterhub resources
   hosts: localhost
   tasks:
-
     # https://github.com/ansible-collections/community.aws/blob/1.3.0/docs/community.aws.ec2_instance_module.rst
     - name: Delete instance
       community.aws.ec2_instance:
@@ -37,7 +36,6 @@
 
     - name: Delete VPC components
       block:
-
         - name: Delete VPC subnet
           amazon.aws.ec2_vpc_subnet:
             cidr: "{{ subnet_cidr }}"
@@ -103,7 +101,7 @@
 
     - name: Delete local ssh_config file
       copy:
-        content : |
+        content: |
         dest: jupyterhub-ssh-config
       delegate_to: localhost
 

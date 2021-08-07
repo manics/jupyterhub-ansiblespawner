@@ -33,6 +33,7 @@ Provision infrastructure:
     ansible-playbook -i localhost.yml jupyterhub-provision.yml
 
 This will:
+
 - Create an EC2 instance to run JupyterHub acessible only from your current IP address.
 - Install JupyterHub withAnsibleSpawner and the playbooks from this directory on the EC2 instance.
 - Create a local ssh configuration file for convenience to make it easier for you to login.
