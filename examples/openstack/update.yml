@@ -4,7 +4,6 @@
   gather_facts: no
 
   tasks:
-
     # If this VM was newly created it may not be ready
     - name: Wait for system to become reachable
       wait_for_connection:
@@ -159,7 +158,6 @@
           port: 8888
 
   handlers:
-
     - name: restart jupyterhub-singleuser
       systemd:
         name: jupyterhub-singleuser

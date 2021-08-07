@@ -1,7 +1,6 @@
 - name: podman update
   hosts: jupyter-{{ user.name }}
   tasks:
-
     - command: env
       register: container_env
 

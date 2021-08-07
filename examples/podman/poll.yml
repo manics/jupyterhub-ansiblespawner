@@ -1,7 +1,6 @@
 - name: podman poll
   hosts: localhost
   tasks:
-
     - containers.podman.podman_container_info:
         name: jupyter-{{ user.name }}
       register: container_info

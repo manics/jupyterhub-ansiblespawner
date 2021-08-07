@@ -10,18 +10,16 @@ This spawner runs Ansible playbooks to start, manage and stop JupyterHub singleu
 This means any Ansible module can be used to orchestrate your singleuser servers, including [Docker and many public/private clouds](https://docs.ansible.com/ansible/2.9/modules/list_of_cloud_modules.html), and other infrastructure platforms supported by the community.
 You can do things like create multiple storage volumes for each user, or provision additional services on other containers/VMs.
 
-
 ## Prerequisites
 
 Python 3.6 or above and JupyterHub 1.0.0 or above are required.
 
-
 ## Installation
-
 
 ## Configuration
 
 Example `jupyterhub_config.py` spawner configuration.
+
 ```
 ansible_path = "/path/to/"
 c.JupyterHub.spawner_class = "ansible"
@@ -37,8 +35,8 @@ c.AnsibleSpawner.playbook_vars = {
 c.AnsibleSpawner.start_timeout = 600
 c.JupyterHub.hub_connect_ip = "10.0.0.1"
 ```
-See the example playbooks under [`./examples`](./examples)
 
+See the example playbooks under [`./examples`](./examples)
 
 ## Development
 

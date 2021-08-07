@@ -1,7 +1,6 @@
 - name: ec2 create
   hosts: localhost
   tasks:
-
     - name: Create instance
       community.aws.ec2_instance:
         image_id: "{{ cloud_baseimage }}"

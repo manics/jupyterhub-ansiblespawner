@@ -221,7 +221,9 @@ class AnsibleSpawner(Spawner):
         inventory: UnionT[JsonT, TupleT[str, str]],
         **kwargs,
     ) -> JsonT:
-        ansible_kwargs: JsonT = dict(quiet=True,)
+        ansible_kwargs: JsonT = dict(
+            quiet=True,
+        )
         # Use temporary artifacts dir otherwise the events seem to accumulate from
         # previous runs
         tmpdir = None
@@ -342,7 +344,10 @@ class AnsibleSpawner(Spawner):
         """
         # https://github.com/jupyterhub/jupyterhub/blob/1.0.0/jupyterhub/user.py#L142
         # https://github.com/jupyterhub/jupyterhub/blob/1.0.0/jupyterhub/orm.py#L147
-        return dict(escaped_name=self.user.escaped_name, name=self.user.name,)
+        return dict(
+            escaped_name=self.user.escaped_name,
+            name=self.user.name,
+        )
 
     async def _get_extravars(self) -> JsonT:
         vars = {
@@ -381,7 +386,9 @@ class AnsibleSpawner(Spawner):
         # When starting we want to show progress messages.
         # Ansible async runs in a separate thread
         def event_handler(
-            loop: asyncio.AbstractEventLoop, queue: asyncio.Queue, e: JsonT,
+            loop: asyncio.AbstractEventLoop,
+            queue: asyncio.Queue,
+            e: JsonT,
         ):
             # Remove colour escape codes
             m = e["event"] + (

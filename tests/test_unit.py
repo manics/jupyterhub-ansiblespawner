@@ -121,7 +121,8 @@ async def test_run_ansible(
 
 
 @pytest.mark.parametrize(
-    "playbook", ["non_existent.yml", "unit_empty_playbook.yml"],
+    "playbook",
+    ["non_existent.yml", "unit_empty_playbook.yml"],
 )
 @pytest.mark.asyncio
 async def test_run_ansible_exception(event_loop, playbook):
