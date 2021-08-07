@@ -1,0 +1,204 @@
+# https://www.infinitypp.com/ansible/create-vpc-ansible-aws/
+# https://steampunk.si/blog/aws-ansible-collection-vpc-getting-started/
+
+- name: ec2 provision jupyterhub
+  hosts: localhost
+  tasks:
+
+    - name: SSH key
+      amazon.aws.ec2_key:
+        key_material: "{{ lookup('file', ssh_public_key) }}"
+        name: "{{ jupyter_ec2_key_name }}"
+        state: "{{ state }}"
+
+    - name: Create VPC
+      amazon.aws.ec2_vpc_net:
+        cidr_block: "{{ subnet_cidr }}"
+        name: jupyter-ansiblespawner
+        state: "{{ state }}"
+        tags: "{{ default_tags }}"
+      register: _vpc
+
+    - name: Get local IP
+      community.general.ipify_facts:
+      register: _myip
+
+    - name: Security group
+      amazon.aws.ec2_group:
+        name: jupyter-ansiblespawner
+        description: Allow Jupyter and related ports
+        rules:
+          - proto: tcp
+            ports:
+              - 22
+              - 80
+              - 443
+              - 8000
+              - 8888
+            cidr_ip: "{{ jupyter_ec2_external_cidr | default(ipify_public_ip + '/32') }}"
+            rule_desc: allow 22 80 443 8000 8888
+        vpc_id: "{{ _vpc.vpc.id }}"
+        state: "{{ state }}"
+        tags: "{{ default_tags }}"
+
+    - name: Create VPC subnet
+      amazon.aws.ec2_vpc_subnet:
+        cidr: "{{ subnet_cidr }}"
+        # Assign public IP by default?
+        map_public: false
+        vpc_id: "{{ _vpc.vpc.id }}"
+        state: "{{ state }}"
+        tags: "{{ default_tags }}"
+      register: _subnet
+
+    # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_igw_module.rst
+    - name: Create VPC internet gateway
+      community.aws.ec2_vpc_igw:
+        vpc_id: "{{ _vpc.vpc.id }}"
+        state: "{{ state }}"
+        tags: "{{ default_tags }}"
+      # register: _gateway
+
+    # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_route_table_module.rst
+    - name: Setup external routing
+      community.aws.ec2_vpc_route_table:
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: igw
+        subnets:
+          - "{{ _subnet.subnet.id }}"
+        vpc_id: "{{ _vpc.vpc.id }}"
+        state: "{{ state }}"
+        tags: "{{ default_tags }}"
+
+    # TODO: Disable public IP in create.yml and use NAT
+    # https://docs.ansible.com/ansible/latest/collections/community/aws/ec2_vpc_nat_gateway_module.html
+    # - name: Create NAT gateway for internal instances
+    #   community.aws.ec2_vpc_nat_gateway:
+    #     state: "{{ state }}"
+    #     subnet_id: "{{ _subnet.subnet.id }}"
+    #     wait: true
+    #     wait_timeout: "{{ wait_timeout }}"
+
+    # https://docs.ansible.com/ansible/latest/collections/community/aws/iam_role_module.html
+    - name: Create IAM role and instance profile
+      community.aws.iam_role:
+        # Only allow EC2 instances to assume the role
+        # https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2.html
+        assume_role_policy_document: "{{ lookup('file','assume-policy-ec2.json') }}"
+        create_instance_profile: true
+        description: Allow JupyterHub to create EC2 instances
+        name: jupyterhub-ansiblespawner
+        path: /jupyterhub/
+        state: "{{ state }}"
+        tags: "{{ default_tags }}"
+      register: _role
+
+    # In-line policy (alternative is to create a ManagedPolicy)
+    # arn:aws:iam::aws:policy/AmazonEC2FullAccess for ec2:* only
+    # TODO: Restrict permissions to only what's required
+    # https://docs.ansible.com/ansible/latest/collections/community/aws/iam_policy_module.html
+    - name: Create IAM policy
+      community.aws.iam_policy:
+        iam_type: role
+        iam_name: jupyterhub-ansiblespawner
+        policy_name: jupyterhub-ansiblespawner
+        state: "{{ state }}"
+        policy_json: " {{ lookup( 'file', 'policy-ec2-allow-all.json') }} "
+
+    # https://github.com/ansible-collections/community.aws/blob/1.3.0/docs/community.aws.ec2_instance_module.rst
+    - name: Create instance
+      community.aws.ec2_instance:
+        image_id: "{{ cloud_baseimage }}"
+        # ARN doesn't seem to work, so use name
+        # instance_role: "{{ _role.arn }}"
+        instance_role: jupyterhub-ansiblespawner
+        instance_type: t2.micro
+        filters:
+          # https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+          tag:Name: jupyterhub
+          instance-state-name: running
+        key_name: jupyter
+        name: jupyterhub
+        network:
+          assign_public_ip: true
+        security_groups:
+          - default
+          - jupyter-ansiblespawner
+        vpc_subnet_id: "{{ _subnet.subnet.id }}"
+        wait: true
+        wait_timeout: "{{ wait_timeout }}"
+        state: "{{ instance_state | default(state) }}"
+        tags: "{{ default_tags }}"
+      register: _instance
+
+    - debug: var=_instance
+
+    # This isn't needed since the inventory is created dynamically, but you can use it
+    # to SSH in (ssh -F jupyterhub-ssh-config jupyterhub)
+    - name: Create local ssh_config file
+      copy:
+        content : |
+          Host jupyterhub
+            HostName {{ _instance.instances.0.public_dns_name }}
+            User ec2-user
+            IdentityFile ./jupyter-id_rsa.pem
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+        dest: jupyterhub-ssh-config
+      delegate_to: localhost
+
+    - name: Create dynamic inventory group
+      add_host:
+        name: jupyterhub
+        # groups: jupyterhub
+        ansible_host: "{{ _instance.instances.0.public_ip_address }}"
+        ansible_user: ec2-user
+        ansible_ssh_private_key_file: ./jupyter-id_rsa.pem
+        ansible_ssh_common_args: >
+          -o IdentitiesOnly=yes
+          -o BatchMode=yes
+          -o StrictHostKeyChecking=no
+          -o UserKnownHostsFile=/dev/null
+
+    - debug:
+        msg: |-
+          IP: {{ _instance.instances.0.public_ip_address }}
+          Address: {{ _instance.instances.0.public_dns_name }}
+
+    - name: Set variables to pass to jupyterhub-deploy.yml
+      set_fact:
+        jupyter_ec2_subnet: "{{ _subnet.subnet.id }}"
+        jupyter_ec2_key_name: "{{ jupyter_ec2_key_name }}"
+
+
+  vars:
+    subnet_cidr: 172.30.1.0/24
+    cloud_baseimage: "resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+    jupyter_ec2_key_name: jupyter
+    # Default is to allow access from this computer's external IP only
+    # jupyter_ec2_external_cidr: 0.0.0.0/0
+    ssh_public_key: "{{ ansible_srcdir }}/jupyter-id_rsa.pub"
+    default_tags:
+      app: jupyter-ansiblespawner
+      creator: ansible
+    state: present
+    # To delete instances only set
+    # instance_state: absent
+    wait_timeout: 300
+
+    ansible_srcdir: "{{ playbook_dir }}"
+
+
+- import_playbook: jupyterhub-deploy.yml
+
+
+- name: Display JupyterHub hostname and IP
+  hosts: localhost
+  tasks:
+
+    - debug:
+        msg: |-
+          JupyterHub should be running at http://{{ _instance.instances.0.public_dns_name }}:8000

@@ -1,0 +1,114 @@
+# https://www.infinitypp.com/ansible/create-vpc-ansible-aws/
+# https://steampunk.si/blog/aws-ansible-collection-vpc-getting-started/
+
+- name: ec2 destroy jupyterhub resources
+  hosts: localhost
+  tasks:
+
+    # https://github.com/ansible-collections/community.aws/blob/1.3.0/docs/community.aws.ec2_instance_module.rst
+    - name: Delete instance
+      community.aws.ec2_instance:
+        filters:
+          # https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+          tag:Name: jupyterhub
+          instance-state-name: running
+        # name: jupyterhub
+        state: absent
+
+    - name: Delete SSH key
+      amazon.aws.ec2_key:
+        name: jupyter
+        state: absent
+
+    - name: Delete Security group
+      amazon.aws.ec2_group:
+        name: jupyter-ansiblespawner
+        state: absent
+
+    - name: Lookup VPC
+      amazon.aws.ec2_vpc_net_facts:
+        filters:
+          cidr: "{{ subnet_cidr }}"
+          tag:Name: jupyter-ansiblespawner
+      register: _vpcs
+
+    - debug:
+        msg: "{{ _vpcs }}"
+
+    - name: Delete VPC components
+      block:
+
+        - name: Delete VPC subnet
+          amazon.aws.ec2_vpc_subnet:
+            cidr: "{{ subnet_cidr }}"
+            vpc_id: "{{ _vpcs.vpcs.0.vpc_id }}"
+            state: absent
+
+        # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_igw_module.rst
+        - name: Delete VPC internet gateway
+          community.aws.ec2_vpc_igw:
+            vpc_id: "{{ _vpcs.vpcs.0.vpc_id }}"
+            state: absent
+
+        # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_route_table_info_module.rst
+        - name: Find route tables which reference this VPC
+          community.aws.ec2_vpc_route_table_info:
+            filters:
+              vpc-id: "{{ _vpcs.vpcs.0.vpc_id }}"
+          register: _route_tables
+
+        # # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_route_table_module.rst
+        # - name: Remove routes from route tables
+        #   community.aws.ec2_vpc_route_table:
+        #     lookup: id
+        #     route_table_id: "{{ item.id }}"
+        #     routes: []
+        #     subnets: []
+        #     vpc_id: "{{ _vpcs.vpcs.0.vpc_id }}"
+        #   with_items: "{{ _route_tables.route_tables }}"
+
+        # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_route_table_module.rst
+        - name: Delete external routing
+          community.aws.ec2_vpc_route_table:
+            lookup: id
+            route_table_id: "{{ item.id }}"
+            state: absent
+          with_items: "{{ _route_tables.route_tables }}"
+          ignore_errors: true
+
+      when: (_vpcs.vpcs | length) > 0
+
+    - name: Delete VPC
+      amazon.aws.ec2_vpc_net:
+        cidr_block: "{{ subnet_cidr }}"
+        name: jupyter-ansiblespawner
+        state: absent
+
+    - name: Delete IAM policy
+      community.aws.iam_policy:
+        iam_type: role
+        iam_name: jupyterhub-ansiblespawner
+        policy_name: jupyterhub-ansiblespawner
+        state: absent
+      # Fails if already deleted
+      ignore_errors: true
+
+    # https://docs.ansible.com/ansible/latest/collections/community/aws/iam_role_module.html
+    - name: Delete IAM role and instance profile
+      community.aws.iam_role:
+        name: jupyterhub-ansiblespawner
+        path: /jupyterhub/
+        delete_instance_profile: true
+        state: absent
+
+    - name: Delete local ssh_config file
+      copy:
+        content : |
+        dest: jupyterhub-ssh-config
+      delegate_to: localhost
+
+  vars:
+    subnet_cidr: 172.30.1.0/24
+    # default_tags:
+    #   app: jupyter-ansiblespawner
+    #   creator: ansible

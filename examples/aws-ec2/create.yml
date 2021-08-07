@@ -1,0 +1,49 @@
+- name: ec2 create
+  hosts: localhost
+  tasks:
+
+    - name: Create instance
+      community.aws.ec2_instance:
+        image_id: "{{ cloud_baseimage }}"
+        instance_type: t2.micro
+        filters:
+          # https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+          tag:Name: jupyter-{{ user.name }}
+          tag:app: jupyter-ansiblespawner
+          instance-state-name: running
+        key_name: "{{ key_name }}"
+        name: jupyter-{{ user.name }}
+        network:
+          # TODO: Create a private subnet with NAT gateway instead
+          # assign_public_ip: false
+          assign_public_ip: true
+        security_groups:
+          - default
+          - jupyter-ansiblespawner
+        vpc_subnet_id: "{{ subnet_id }}"
+        wait: true
+        wait_timeout: 300
+        state: present
+        tags:
+          app: jupyter-ansiblespawner
+      register: _instance
+
+    - debug: var=_instance
+
+    # "set_fact: ansiblespawner_out" will be passed back to the spawner
+    # Will be merged with "ansiblespawner_out" from the update playbook if
+    # its defined. The final output must contain fields "ip" and "port"
+    - set_fact:
+        ansiblespawner_out:
+          ec2_instance: "{{ _instance.instances.0 }}"
+          ip: "{{ _instance.instances.0.private_ip_address }}"
+          # port:
+
+  vars:
+    cloud_baseimage: "resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+    ssh_public_key: "{{ ansible_srcdir }}jupyter-id_rsa.pub"
+
+    # Required input parameters
+    # - key_name
+    # - subnet_id
+    # - user.name

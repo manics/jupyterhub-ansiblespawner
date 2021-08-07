@@ -1,0 +1,19 @@
+---
+# ansible-galaxy collection install -p collections -r requirements.yml
+
+# The AWS modules are split into two collections:
+# https://www.ansible.com/blog/getting-started-with-aws-ansible-module-development
+
+collections:
+  # https://galaxy.ansible.com/amazon/aws
+  - name: amazon.aws
+    version: 1.5.0
+  # https://galaxy.ansible.com/community/aws
+  - name: community.aws
+    version: 1.5.0
+
+# ansible-galaxy role install -p roles -r requirements.yml
+roles:
+  # https://github.com/evandam/evandam.conda
+  - name: evandam.conda
+    version: v1.2.0

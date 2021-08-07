@@ -1,0 +1,129 @@
+# Install JupyterHub
+
+- name: Install jupyterhub
+  hosts: jupyterhub
+  become: true
+
+  pre_tasks:
+
+    - wait_for_connection:
+
+    # https://docs.conda.io/projects/conda/en/latest/user-guide/install/rpm-debian.html
+    - name: Add conda yum repository
+      yum_repository:
+        name: conda
+        description: Anaconda conda
+        baseurl: https://repo.anaconda.com/pkgs/misc/rpmrepo/conda
+        gpgkey: https://repo.anaconda.com/pkgs/misc/gpgkeys/anaconda.asc
+
+    - name: Upgrade packages
+      yum:
+        name: '*'
+        state: latest
+
+    - name: Install packages
+      package:
+        name:
+          - conda
+          - git
+          - screen
+        state: present
+
+  roles:
+
+    - role: evandam.conda
+
+  tasks:
+
+    # conda runs out of memory on an AWS EC2 t2.micro instance so use mamba
+
+    - name: Install mamba
+      conda:
+        channels:
+          - conda-forge
+        name:
+          - mamba=0.15
+        # Specifying an environment makes this non-idempotent 😞
+        # environment: jupyterhub
+        executable: /opt/conda/bin/conda
+        state: present
+
+    - name: Install Jupyterhub
+      conda:
+        channels:
+          - conda-forge
+        name:
+          - python=3.9
+          - jupyterhub=1.4
+          - oauthenticator=14
+          - ansible=4
+          - ansible-runner=1.4
+          - boto3=1.18  # for Ansible AWS modules
+          - docker-py=5  # for Ansible Docker modules
+          - shade=1.33  # for Ansible Openstack modules
+          - pip=21
+        # Specifying an environment makes this non-idempotent 😞
+        # environment: jupyterhub
+        # executable: /opt/conda/envs/jupyterhub/bin/mamba
+        executable: /opt/conda/bin/mamba
+        state: present
+
+    - name: Install jupyterhub-ansiblespawner
+      pip:
+        name:
+          - git+https://github.com/manics/jupyterhub-ansiblespawner.git@5ebafeaad666d4e6843e96e2cef9ad568cbae30c
+        executable: /opt/conda/bin/pip
+        state: present
+
+    - name: Create jupyterhub system user
+      user:
+        name: jupyterhub
+        home: /opt/jupyterhub
+        system: true
+        state: present
+
+    - name: Create jupyterhub directory
+      file:
+        path: /opt/jupyterhub
+        owner: jupyterhub
+        state: directory
+
+    - name: Copy across playbooks
+      copy:
+        src: "{{ item }}"
+        dest: /opt/jupyterhub/{{ item }}
+      with_items:
+        - create.yml
+        - destroy.yml
+        - poll.yml
+        - update.yml
+        - inventory.yml.j2
+        - jupyterhub-singleuser.service.j2
+        - jupyter-id_rsa.pem
+
+    - name: Create JupyterHub configuration
+      template:
+        src: jupyterhub_config.py
+        dest: /opt/jupyterhub/jupyterhub_config.py
+      vars:
+        _jupyter_ec2_key_name: "{{ jupyter_ec2_key_name | default(hostvars['localhost'].jupyter_ec2_key_name) }}"
+        _jupyter_ec2_subnet: "{{ jupyter_ec2_subnet | default(hostvars['localhost']._subnet.subnet.id) }}"
+
+    - name: Copy systemd service
+      copy:
+        src: jupyterhub.service
+        dest: /etc/systemd/system/jupyterhub.service
+
+    - name: Start JupyterHub
+      systemd:
+        name: jupyterhub
+        state: started
+        enabled: true
+        daemon_reload: true
+
+
+  vars:
+    # Defined in jupyterhub-provision.yml but can be overridden
+    # jupyter_ec2_key_name:
+    # jupyter_ec2_subnet:
+
