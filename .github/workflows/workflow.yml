@@ -70,6 +70,31 @@ jobs:
           file: ./coverage.xml
           # fail_ci_if_error: true
 
+  aws-deploy:
+    name: AWS Localstack test
+    strategy:
+      # Keep running so we can see if other tests pass
+      fail-fast: false
+      matrix:
+        scenario:
+          - localstack-provision
+          - podman-deploy
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+      - name: Install Ansible requirements
+        run: |
+          python3 -mpip install ansible boto3 molecule[docker] molecule[podman]
+      - name: Run tests
+        run: |
+          cd examples/aws-ec2/tests
+          ./run-localstack.sh -d
+          sleep 10
+          molecule test --scenario-name ${{ matrix.scenario }}
+
   # https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
   publish-pypi:
     name: Pypi

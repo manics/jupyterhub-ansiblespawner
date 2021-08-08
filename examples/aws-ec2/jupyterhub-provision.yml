@@ -190,6 +190,7 @@
     ansible_srcdir: "{{ playbook_dir }}"
 
 - import_playbook: jupyterhub-deploy.yml
+  when: (jupyterhub_deploy | default(True)) | bool
 
 - name: Display JupyterHub hostname and IP
   hosts: localhost
