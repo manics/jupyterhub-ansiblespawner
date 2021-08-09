@@ -1,6 +1,4 @@
 ---
-# This is an example playbook to execute Ansible tests.
-
 - name: Verify
   hosts: jupyterhub
   tasks:
@@ -8,9 +6,6 @@
     - name: Get jupyterhub service status
       command: systemctl status jupyterhub
       register: jupyterhub_status
-
-    - debug:
-        var: jupyterhub_status
 
     - name: Check jupyterhub service is running
       assert:
