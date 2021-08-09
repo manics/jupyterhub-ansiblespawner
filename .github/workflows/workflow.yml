@@ -90,8 +90,8 @@ jobs:
           python3 -mpip install ansible boto3 molecule[docker] molecule[podman]
       - name: Run tests
         run: |
-          cd examples/aws-ec2/tests
-          ./run-localstack.sh -d
+          cd examples/aws-ec2
+          ./ci/run-localstack.sh -d
           sleep 10
           molecule test --scenario-name ${{ matrix.scenario }}
 

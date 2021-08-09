@@ -2,8 +2,8 @@
 dependency:
   name: galaxy
   options:
-    role-file: ../requirements.yml
-    requirements-file: ../requirements.yml
+    role-file: requirements.yml
+    requirements-file: requirements.yml
 driver:
   name: delegated
   options:
@@ -24,10 +24,9 @@ provisioner:
   inventory:
     host_vars:
       localhost:
-        ansible_python_interpreter: ~/miniforge3/envs/ansible/bin/python
         jupyterhub_deploy: False
   playbooks:
-    converge: ../../../jupyterhub-provision.yml
+    converge: ../../jupyterhub-provision.yml
 scenario:
   test_sequence:
     - lint

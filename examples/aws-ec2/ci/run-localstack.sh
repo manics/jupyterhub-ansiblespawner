@@ -1,5 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 set -eu
+
+SCRIPTDIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
+cd "$SCRIPTDIR"
 
 if command -v podman; then
   CONTAINER=podman
