@@ -85,6 +85,9 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: "3.9"
+      - name: Override molecule ansible_python_interpreter
+        run: |
+          sed -i -re "s%ansible_python_interpreter: .+%ansible_python_interpreter: $(which python3)%" examples/aws-ec2/molecule/localstack-provision/molecule.yml
       - name: Install Ansible requirements
         run: |
           python3 -mpip install ansible boto3 molecule[docker] molecule[podman]
