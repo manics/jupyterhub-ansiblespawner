@@ -1,4 +1,5 @@
 ---
+# https://molecule.readthedocs.io/en/latest/configuration.html
 dependency:
   name: galaxy
   options:
@@ -14,8 +15,9 @@ platforms:
   - name: localhost
 provisioner:
   name: ansible
+  log: True
   ansible_args:
-    - -e jupyterhub_deploy=false
+    - -e jupyterhub_deploy=false -e ssh_public_key=ci/dummy-id_rsa.pub
   env:
     AWS_ACCESS_KEY_ID: test
     AWS_SECRET_ACCESS_KEY: test
@@ -24,11 +26,13 @@ provisioner:
   inventory:
     host_vars:
       localhost:
+        ansible_python_interpreter: "${VIRTUAL_ENV:-$CONDA_PREFIX}/bin/python3"
         jupyterhub_deploy: False
   playbooks:
     converge: ../../jupyterhub-provision.yml
 scenario:
   test_sequence:
+    # Due to limitations with localstack we can only run the playbook once
     - lint
     - dependency
     - syntax

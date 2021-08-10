@@ -96,7 +96,11 @@
         - update.yml
         - inventory.yml.j2
         - jupyterhub-singleuser.service.j2
-        - jupyter-id_rsa.pem
+
+    - name: Copy across private SSH key
+      copy:
+        src: "{{ ssh_private_key | default(default(ansible_srcdir, '') + 'jupyter-id_rsa.pem') }}"
+        dest: /opt/jupyterhub/jupyter-id_rsa.pem
 
     - name: Create JupyterHub configuration
       template:
