@@ -1,0 +1,16 @@
+---
+- name: Verify
+  hosts: localhost
+  tasks:
+    - name: Get instances
+      community.aws.ec2_instance_info:
+      register: ec2_instances
+
+    - name: Check jupyterhub instance
+      assert:
+        that:
+          - ec2_instances.instances | length == 1
+          - ec2_instances.instances[0].state.name == "running"
+          - ec2_instances.instances[0].tags.Name == "jupyterhub"
+          - ec2_instances.instances[0].tags.app == "jupyter-ansiblespawner"
+          - ec2_instances.instances[0].tags.creator == "ansible"

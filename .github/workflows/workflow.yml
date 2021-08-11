@@ -43,7 +43,7 @@ jobs:
           # This path is specific to Ubuntu
           path: ~/.cache/pip
           # Look to see if there is a cache hit for the corresponding requirements file
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('*requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
@@ -69,6 +69,42 @@ jobs:
         with:
           file: ./coverage.xml
           # fail_ci_if_error: true
+
+  aws-deploy:
+    name: AWS Localstack test
+    strategy:
+      # Keep running so we can see if other tests pass
+      fail-fast: false
+      matrix:
+        scenario:
+          - localstack-provision
+          - podman-deploy
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('*requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: Install Ansible requirements
+        run: |
+          python -m pip install -r dev-requirements.txt
+      - name: Override molecule ansible_python_interpreter
+        run: |
+          sed -i -re "s%ansible_python_interpreter: .+%ansible_python_interpreter: $(which python3)%" examples/aws-ec2/molecule/localstack-provision/molecule.yml
+      - name: Run tests
+        run: |
+          cd examples/aws-ec2
+          ./ci/run-localstack.sh -d
+          sleep 10
+          molecule test --scenario-name ${{ matrix.scenario }}
 
   # https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
   publish-pypi:

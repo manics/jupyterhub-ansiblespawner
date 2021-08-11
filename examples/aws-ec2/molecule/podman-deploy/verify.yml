@@ -1,0 +1,14 @@
+---
+- name: Verify
+  hosts: jupyterhub
+  tasks:
+    # We're using docker-systemctl-replacement so service_facts doesn't work
+    - name: Get jupyterhub service status
+      command: systemctl status jupyterhub
+      register: jupyterhub_status
+
+    - name: Check jupyterhub service is running
+      assert:
+        that:
+          - "'Loaded: loaded (/etc/systemd/system/jupyterhub.service, enabled)' in jupyterhub_status.stdout"
+          - "'Active: active (running)' in jupyterhub_status.stdout"
