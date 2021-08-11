@@ -4,6 +4,9 @@ from setuptools import setup
 from collections import defaultdict
 from pathlib import Path
 
+# https://stackoverflow.com/a/57437660
+# Apparently MANIFEST.in isn't required when you use setuptools-scm
+
 
 def example_data_files():
     data_files = defaultdict(list)
