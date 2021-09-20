@@ -14,5 +14,5 @@ pytest-tornado==0.8.1
 
 # Additional dependencies for examples/aws-ec2 molecule test
 boto3==1.18.44
-molecule==3.4.0
+molecule==3.5.1
 molecule-podman==1.0.1
