@@ -1,6 +1,6 @@
 # These are automatically bumped by dependabot
 ansible==4.6.0
-ansible-core==2.11.5
+ansible-core==2.11.6
 ansible-runner==2.0.2
 codecov==2.1.12
 docker==5.0.2
