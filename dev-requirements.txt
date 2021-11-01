@@ -13,6 +13,6 @@ pytest-cov==2.12.1
 pytest-tornado==0.8.1
 
 # Additional dependencies for examples/aws-ec2 molecule test
-boto3==1.18.48
+boto3==1.19.7
 molecule==3.5.1
 molecule-podman==1.0.1
