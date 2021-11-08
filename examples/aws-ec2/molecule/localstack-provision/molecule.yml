@@ -3,8 +3,8 @@
 dependency:
   name: galaxy
   options:
-    role-file: requirements.yml
-    requirements-file: requirements.yml
+    role-file: ${ANSIBLESPAWNER_ANSIBLE_PATH}requirements.yml
+    requirements-file: ${ANSIBLESPAWNER_ANSIBLE_PATH}requirements.yml
 driver:
   name: delegated
   options:
@@ -17,7 +17,7 @@ provisioner:
   name: ansible
   log: True
   ansible_args:
-    - -e jupyterhub_deploy=false -e ssh_public_key=ci/dummy-id_rsa.pub
+    - -e jupyterhub_deploy=false -e ssh_public_key=${MOLECULE_SCENARIO_DIRECTORY}/../../ci/dummy-id_rsa.pub
   env:
     AWS_ACCESS_KEY_ID: test
     AWS_SECRET_ACCESS_KEY: test
@@ -29,7 +29,7 @@ provisioner:
         ansible_python_interpreter: "${VIRTUAL_ENV:-$CONDA_PREFIX}/bin/python3"
         jupyterhub_deploy: False
   playbooks:
-    converge: ../../jupyterhub-provision.yml
+    converge: ${ANSIBLESPAWNER_ANSIBLE_PATH-../../}jupyterhub-provision.yml
 scenario:
   test_sequence:
     # Due to limitations with localstack we can only run the playbook once

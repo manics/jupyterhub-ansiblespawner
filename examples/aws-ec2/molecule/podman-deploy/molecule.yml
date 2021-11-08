@@ -3,8 +3,8 @@
 dependency:
   name: galaxy
   options:
-    role-file: requirements.yml
-    requirements-file: requirements.yml
+    role-file: ${ANSIBLESPAWNER_ANSIBLE_PATH}requirements.yml
+    requirements-file: ${ANSIBLESPAWNER_ANSIBLE_PATH}requirements.yml
 driver:
   name: podman
 platforms:
@@ -28,9 +28,12 @@ provisioner:
         ansible_python_interpreter: /usr/bin/python3
         jupyter_ec2_key_name: test-key
         jupyter_ec2_subnet: test-subnet
-        ssh_private_key: ci/dummy-id_rsa.pem
+        ssh_private_key: ${MOLECULE_PROJECT_DIRECTORY}/ci/dummy-id_rsa.pem}
   playbooks:
-    converge: ../../jupyterhub-deploy.yml
+    converge: ${ANSIBLESPAWNER_ANSIBLE_PATH-../../}jupyterhub-deploy.yml
+# scenario:
+#   converge_sequence:
+#     - converge
 verifier:
   name: ansible
 scenario:
