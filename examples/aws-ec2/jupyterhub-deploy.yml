@@ -39,12 +39,14 @@
         channels:
           - conda-forge
         name:
-          # Use >= to avoid idempotence error if mamba is updated in a later step
-          - mamba>=0.17
+          - mamba=0.17
         # Specifying an environment makes this non-idempotent 😞
         # environment: jupyterhub
         executable: /opt/conda/bin/conda
         state: present
+      tags:
+        # Skip this task during the idempotence check 😞
+        - molecule-idempotence-notest
 
     - name: Install Jupyterhub
       conda:
@@ -65,6 +67,9 @@
         # executable: /opt/conda/envs/jupyterhub/bin/mamba
         executable: /opt/conda/bin/mamba
         state: present
+      tags:
+        # Skip this task during the idempotence check 😞
+        - molecule-idempotence-notest
 
     - name: Install jupyterhub-ansiblespawner
       pip:

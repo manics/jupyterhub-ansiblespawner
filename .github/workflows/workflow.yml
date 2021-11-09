@@ -104,7 +104,7 @@ jobs:
           cd examples/aws-ec2
           ./ci/run-localstack.sh -d
           sleep 10
-          molecule test --scenario-name ${{ matrix.scenario }}
+          molecule --debug -vv test --scenario-name ${{ matrix.scenario }}
 
   # https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
   publish-pypi:
