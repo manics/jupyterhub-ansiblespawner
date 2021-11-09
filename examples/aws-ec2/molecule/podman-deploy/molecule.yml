@@ -33,3 +33,6 @@ provisioner:
     converge: ../../jupyterhub-deploy.yml
 verifier:
   name: ansible
+scenario:
+  converge_sequence:
+    - converge
