@@ -54,11 +54,11 @@
           - conda-forge
         name:
           - python=3.9
-          - jupyterhub=1.4
+          - jupyterhub=1.5
           - oauthenticator=14
           - ansible=4
           - ansible-runner=1.4
-          - boto3=1.18 # for Ansible AWS modules
+          - boto3=1.19 # for Ansible AWS modules
           - docker-py=5 # for Ansible Docker modules
           - shade=1.33 # for Ansible Openstack modules
           - pip=21
@@ -74,7 +74,7 @@
     - name: Install jupyterhub-ansiblespawner
       pip:
         name:
-          - git+https://github.com/manics/jupyterhub-ansiblespawner.git@5ebafeaad666d4e6843e96e2cef9ad568cbae30c
+          - git+https://github.com/manics/jupyterhub-ansiblespawner.git@5651185d187f89267717f172f2903028ef5bc257
         executable: /opt/conda/bin/pip
         state: present
 
