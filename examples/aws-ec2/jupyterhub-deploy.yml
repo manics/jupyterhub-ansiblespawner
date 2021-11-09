@@ -39,7 +39,8 @@
         channels:
           - conda-forge
         name:
-          - mamba=0.15
+          # Use >= to avoid idempotence error if mamba is updated in a later step
+          - mamba>=0.17
         # Specifying an environment makes this non-idempotent 😞
         # environment: jupyterhub
         executable: /opt/conda/bin/conda
