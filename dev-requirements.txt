@@ -4,7 +4,7 @@ ansible-core==2.11.5
 ansible-runner==2.1.1
 codecov==2.1.12
 docker==5.0.3
-jupyterhub==1.5.0
+jupyterhub==2.0.0
 notebook==6.4.6
 pre-commit==2.16.0
 pytest==6.2.5
