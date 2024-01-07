@@ -48,7 +48,6 @@ class AnsibleException(Exception):
 
 
 class AnsibleSpawner(Spawner):
-
     # Configuration properties
 
     inventory = Union(
