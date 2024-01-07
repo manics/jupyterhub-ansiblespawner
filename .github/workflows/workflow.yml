@@ -9,9 +9,9 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-      - uses: pre-commit/action@v2.0.0
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+      - uses: pre-commit/action@v3.0.0
 
   test:
     name: Test
@@ -32,21 +32,13 @@ jobs:
           podman info
           slirp4netns --version
           fuse-overlayfs --version
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.8"
-      - uses: actions/setup-node@v1
-      - name: Cache pip
-        uses: actions/cache@v2
-        with:
-          # This path is specific to Ubuntu
-          path: ~/.cache/pip
-          # Look to see if there is a cache hit for the corresponding requirements file
-          key: ${{ runner.os }}-pip-${{ hashFiles('*requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+          cache: pip
+          cache-dependency-path: "*-requirements.txt"
+      - uses: actions/setup-node@v4
       - name: Install dependencies
         run: |
           python -m pip install -r dev-requirements.txt
@@ -81,18 +73,12 @@ jobs:
           - podman-deploy
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-      - name: Cache pip
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('*requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+          cache: pip
+          cache-dependency-path: "*-requirements.txt"
       - name: Install Ansible requirements
         run: |
           python -m pip install -r dev-requirements.txt
@@ -116,13 +102,13 @@ jobs:
       - test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
       - name: Build package
         run: |
           python -mpip install wheel
           python setup.py sdist bdist_wheel
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.3.0
+        uses: pypa/gh-action-pypi-publish@v1.8.11
         with:
           password: ${{ secrets.PYPI_PASSWORD }}
