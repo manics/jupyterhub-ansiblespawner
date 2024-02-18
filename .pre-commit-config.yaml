@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/psf/black
-    rev: 23.12.1
+    rev: 24.2.0
     hooks:
       - id: black
         args: [--target-version=py36]
@@ -24,7 +24,18 @@ repos:
     hooks:
       - id: prettier
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.33.0
+    rev: v1.35.1
     hooks:
       - id: yamllint
         args: [--config-data=relaxed]
+  - repo: https://github.com/ansible/ansible-lint.git
+    rev: v24.2.0
+    hooks:
+      - id: ansible-lint
+        # verbose: true
+        args:
+          - examples/aws-ec2/
+          # - examples/docker/
+          # - examples/jupyterhub/
+          # - examples/openstack/
+          - examples/podman/

@@ -1,4 +1,5 @@
 """Unit tests for AnsibleSpawner class"""
+
 import asyncio
 from collections import namedtuple
 import os

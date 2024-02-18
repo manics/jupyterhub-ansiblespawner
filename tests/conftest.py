@@ -1,4 +1,5 @@
 """ pytest config for ansiblespawner tests """
+
 # https://github.com/jupyterhub/yarnspawner/blob/0.4.0/yarnspawner/tests/conftest.py
 import pytest_asyncio
 
