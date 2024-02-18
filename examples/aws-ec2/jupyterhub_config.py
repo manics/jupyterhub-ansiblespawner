@@ -2,7 +2,10 @@ import os
 import socket
 
 local_ip = socket.gethostbyname(socket.gethostname())
-ansible_path = os.path.abspath(os.path.dirname(__file__)) + "/"
+ansible_path = os.getenv("ANSIBLESPAWNER_ANSIBLE_PATH")
+if not ansible_path:
+    ansible_path = os.path.abspath(os.path.dirname(__file__))
+ansible_path = ansible_path.rstrip("/") + "/"
 
 c.JupyterHub.spawner_class = "ansible"
 c.AnsibleSpawner.inventory = ansible_path + "inventory.yml.j2"
