@@ -1,4 +1,5 @@
 """Unit tests for AnsibleSpawner class"""
+import asyncio
 from collections import namedtuple
 import os
 import pytest
@@ -12,13 +13,13 @@ resources_dir = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.mark.asyncio
-async def test_ansible_async(event_loop):
+async def test_ansible_async():
     a = AnsibleSpawner()
     with open(os.path.join(resources_dir, "unit_inventory.yml")) as f:
         inventory = yaml.safe_load(f)
 
     r = await a.ansible_async(
-        event_loop,
+        asyncio.get_running_loop(),
         inventory=inventory,
         playbook=os.path.join(
             os.path.abspath(os.path.dirname(__file__)), "unit_playbook.yml"
@@ -32,9 +33,7 @@ async def test_ansible_async(event_loop):
     [(True, True, True), (False, False, False)],
 )
 @pytest.mark.asyncio
-async def test_run_ansible(
-    event_loop, tmp_path, inventory_dict, private_data_dir, event_handler
-):
+async def test_run_ansible(tmp_path, inventory_dict, private_data_dir, event_handler):
     a = AnsibleSpawner()
 
     inventory_file = os.path.join(resources_dir, "unit_inventory.yml")
@@ -61,7 +60,7 @@ async def test_run_ansible(
         kwargs["event_handler"] = event_handler_func
 
     r = await a.run_ansible(
-        event_loop,
+        asyncio.get_running_loop(),
         inventory=inventory,
         playbook=os.path.join(resources_dir, "unit_playbook.yml"),
         **kwargs,
@@ -125,7 +124,7 @@ async def test_run_ansible(
     ["non_existent.yml", "unit_empty_playbook.yml"],
 )
 @pytest.mark.asyncio
-async def test_run_ansible_exception(event_loop, playbook):
+async def test_run_ansible_exception(playbook):
     a = AnsibleSpawner()
 
     with open(os.path.join(resources_dir, "unit_inventory.yml")) as f:
@@ -133,7 +132,7 @@ async def test_run_ansible_exception(event_loop, playbook):
 
     with pytest.raises(AnsibleException) as exc:
         _ = await a.run_ansible(
-            event_loop,
+            asyncio.get_running_loop(),
             inventory=inventory,
             playbook=os.path.join(resources_dir, playbook),
         )
