@@ -1,6 +1,7 @@
 """
 JupyterHub spawner that uses Ansible to create singleuser servers
 """
+
 import ansible_runner
 import asyncio
 from datetime import datetime
@@ -48,7 +49,6 @@ class AnsibleException(Exception):
 
 
 class AnsibleSpawner(Spawner):
-
     # Configuration properties
 
     inventory = Union(

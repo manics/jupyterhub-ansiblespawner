@@ -15,8 +15,8 @@ platforms:
     pre_build_image: false
     command: /sbin/init
     tmpfs:
-      - /run
-      - /tmp
+      /run: rw
+      /tmp: rw
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
 provisioner:

@@ -1,12 +1,12 @@
 ---
-# https://molecule.readthedocs.io/en/latest/configuration.html
+# https://ansible.readthedocs.io/projects/molecule/configuration/
 dependency:
   name: galaxy
   options:
     role-file: requirements.yml
     requirements-file: requirements.yml
 driver:
-  name: delegated
+  name: default
   options:
     managed: False
     ansible_connection_options:
@@ -33,7 +33,6 @@ provisioner:
 scenario:
   test_sequence:
     # Due to limitations with localstack we can only run the playbook once
-    - lint
     - dependency
     - syntax
     - converge

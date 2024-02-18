@@ -1,4 +1,5 @@
 """Tests for AnsibleSpawner class"""
+
 # https://github.com/jupyterhub/yarnspawner/blob/0.4.0/yarnspawner/tests/test_spawner.py
 import pytest
 

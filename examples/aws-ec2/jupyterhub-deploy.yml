@@ -39,7 +39,7 @@
         channels:
           - conda-forge
         name:
-          - mamba=0.17
+          - mamba=1.5.6
         # Specifying an environment makes this non-idempotent 😞
         # environment: jupyterhub
         executable: /opt/conda/bin/conda
@@ -53,15 +53,15 @@
         channels:
           - conda-forge
         name:
-          - python=3.9
-          - jupyterhub=1.5
-          - oauthenticator=14
-          - ansible=4
-          - ansible-runner=1.4
-          - boto3=1.19 # for Ansible AWS modules
-          - docker-py=5 # for Ansible Docker modules
+          - python=3.10
+          - jupyterhub=4
+          - oauthenticator=16
+          - ansible=9.2
+          - ansible-runner=2.3
+          - boto3=1.23 # for Ansible AWS modules
+          - docker-py=7 # for Ansible Docker modules
           - shade=1.33 # for Ansible Openstack modules
-          - pip=21
+          - pip
         # Specifying an environment makes this non-idempotent 😞
         # environment: jupyterhub
         # executable: /opt/conda/envs/jupyterhub/bin/mamba
