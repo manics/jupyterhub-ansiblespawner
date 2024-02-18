@@ -1,6 +1,6 @@
 """ pytest config for ansiblespawner tests """
 # https://github.com/jupyterhub/yarnspawner/blob/0.4.0/yarnspawner/tests/conftest.py
-import pytest
+import pytest_asyncio
 
 from jupyterhub.tests.mocking import MockHub
 import os
@@ -32,7 +32,7 @@ def _get_host_default_ip():
 
 
 # https://docs.pytest.org/en/latest/example/parametrize.html#apply-indirect-on-particular-arguments
-@pytest.fixture
+@pytest_asyncio.fixture
 async def app(request):
     """
     Mock a jupyterhub app for testing
