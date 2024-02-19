@@ -34,8 +34,4 @@ repos:
       - id: ansible-lint
         # verbose: true
         args:
-          - examples/aws-ec2/
-          # - examples/docker/
-          # - examples/jupyterhub/
-          # - examples/openstack/
-          - examples/podman/
+          - examples/
