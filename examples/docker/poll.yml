@@ -1,7 +1,7 @@
 - name: docker poll
   hosts: localhost
   tasks:
-    - docker_container_info:
+    - community.docker.docker_container_info:
         name: jupyter-{{ user.name }}
       register: container_info
 

@@ -1,7 +1,7 @@
 - name: docker create
   hosts: localhost
   tasks:
-    - docker_container:
+    - community.docker.docker_container:
         name: jupyter-{{ user.name }}
         state: started
         image: "{{ container_image }}"
