@@ -31,6 +31,10 @@ mock_modules:
   - containers.podman.podman_container
   - containers.podman.podman_container_info
 
+  - openstack.cloud.keypair
+  - openstack.cloud.server
+  - openstack.cloud.server_info
+
   - conda
 
 mock_roles:

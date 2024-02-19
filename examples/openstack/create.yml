@@ -1,13 +1,13 @@
 - name: openstack create
   hosts: localhost
   tasks:
-    - os_keypair:
+    - openstack.cloud.keypair:
         name: jupyter
         public_key_file: "{{ ssh_public_key }}"
         state: present
 
-    # https://docs.ansible.com/ansible/latest/modules/os_server_module.html
-    - os_server:
+    # https://docs.ansible.com/ansible/latest/collections/openstack/cloud/server_module.html
+    - openstack.cloud.server:
         name: jupyter-{{ user.name }}
         auto_ip: false
         # flavor: s1.small
@@ -26,8 +26,8 @@
     # its defined. The final output must contain fields "ip" and "port"
     - set_fact:
         ansiblespawner_out:
-          openstack_instance: "{{ _instance.openstack }}"
-          ip: "{{ _instance.openstack.addresses[network_name].0.addr }}"
+          openstack_instance: "{{ _instance.server }}"
+          ip: "{{ _instance.server.addresses[network_name].0.addr }}"
           # port:
 
   vars:

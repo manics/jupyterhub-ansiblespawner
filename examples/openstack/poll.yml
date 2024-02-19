@@ -1,16 +1,16 @@
 - name: openstack poll (vm)
   hosts: localhost
   tasks:
-    # https://docs.ansible.com/ansible/latest/modules/os_server_info_module.html
-    - os_server_info:
+    # https://docs.ansible.com/ansible/latest/collections/openstack/cloud/server_info_module.html
+    - openstack.cloud.server_info:
         server: jupyter-{{ user.name }}
       register: _instance
 
     # "set_fact: ansiblespawner_out" will be passed back to the spawner
     - set_fact:
         ansiblespawner_out:
-          instance: "{{ _instance.openstack_servers.0 | default(None) }}"
-          exists: "{{ _instance.openstack_servers | length > 0 }}"
+          instance: "{{ _instance.servers.0 | default(None) }}"
+          exists: "{{ _instance.servers | length > 0 }}"
           running: false
 
 - name: openstack poll (service)
