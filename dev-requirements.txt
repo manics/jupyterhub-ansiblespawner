@@ -1,7 +1,7 @@
 # These are automatically bumped by dependabot
 ansible==9.3.0
 ansible-core==2.16.4
-ansible-runner==2.3.5
+ansible-runner==2.3.6
 docker==7.0.0
 jupyterhub==4.0.2
 pre-commit==3.6.2
