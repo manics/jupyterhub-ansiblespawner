@@ -12,6 +12,6 @@ pytest-cov==4.1.0
 traitlets==5.14.2
 
 # Additional dependencies for examples/aws-ec2 molecule test
-boto3==1.34.59
+boto3==1.34.64
 molecule==24.2.0
 molecule-plugins==23.5.3
