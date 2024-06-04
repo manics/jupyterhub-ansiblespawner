@@ -19,13 +19,13 @@ jobs:
       # Keep running so we can see if other tests pass
       fail-fast: false
       matrix:
-        pytestmark:
-          - not docker
-          - not podman
+        example:
+          - docker
+          - podman
     runs-on: ubuntu-22.04
     steps:
       - name: Enable rootless podman
-        if: ${{ matrix.pytestmark == 'not docker' }}
+        if: ${{ matrix.example == 'podman' }}
         run: |
           sudo apt-get update -q
           sudo apt-get install -q -y fuse-overlayfs
@@ -53,12 +53,18 @@ jobs:
 
       - name: Install Ansible requirements
         run: |
-          cd examples/podman
+          cd "examples/${{ matrix.example }}"
           ansible-galaxy collection install -p collections -r requirements.yml
           cd ../..
 
       - name: Run tests
-        run: python -mpytest --cov=ansiblespawner tests -v -m "${{ matrix.pytestmark }}" --cov-report=xml --cov-report=term-missing --cov-fail-under=95
+        run: |
+          if [ "${{ matrix.example }}" = podman ]; then
+            PYTESTMARK="not docker"
+          else
+            PYTESTMARK="not podman"
+          fi
+          python -mpytest --cov=ansiblespawner tests -v -m "$PYTESTMARK" --cov-report=xml --cov-report=term-missing --cov-fail-under=95
 
       # https://github.com/marketplace/actions/codecov
       - name: Upload coverage stats
