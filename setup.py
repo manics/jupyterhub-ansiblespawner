@@ -1,6 +1,21 @@
 #!/usr/bin/env python
 # coding: utf-8
 from setuptools import setup
+from collections import defaultdict
+from pathlib import Path
+
+# https://stackoverflow.com/a/57437660
+# Apparently MANIFEST.in isn't required when you use setuptools-scm
+
+
+def example_data_files():
+    data_files = defaultdict(list)
+    examples = Path("examples")
+    for f in examples.glob("**/*"):
+        if f.is_file() and "ci" not in f.parts and "molecule" not in f.parts:
+            d = Path("etc", "ansiblespawner", *f.parts[1:-1])
+            data_files[str(d)].append(str(f))
+    return list(data_files.items())
 
 
 setup(
@@ -27,4 +42,5 @@ setup(
     install_requires=["jupyterhub>=1.0.0", "ansible>=2.9", "ansible-runner>=1.4"],
     python_requires=">=3.6",
     entry_points={"jupyterhub.spawners": ["ansible = ansiblespawner:AnsibleSpawner"]},
+    data_files=example_data_files(),
 )
