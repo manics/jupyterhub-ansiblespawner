@@ -26,6 +26,10 @@
           - conda
           - git
           - screen
+          # packaging module is needed for the pip module even though
+          # it's in a virtualenv
+          # https://github.com/ansible/ansible/issues/82444
+          - python3-packaging
         state: present
 
   roles:
