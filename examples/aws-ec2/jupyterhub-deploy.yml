@@ -16,7 +16,7 @@
         gpgkey: https://repo.anaconda.com/pkgs/misc/gpgkeys/anaconda.asc
 
     - name: Upgrade packages
-      yum:
+      dnf:
         name: "*"
         state: latest
 

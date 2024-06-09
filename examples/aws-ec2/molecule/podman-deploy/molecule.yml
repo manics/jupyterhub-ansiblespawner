@@ -10,7 +10,7 @@ driver:
 platforms:
   # https://www.reddit.com/r/ansible/comments/klxcn0/how_to_use_a_customer_dockerfilej2_with_molecule/
   - name: jupyterhub
-    image: docker.io/library/amazonlinux:2
+    image: docker.io/library/amazonlinux:2023
     dockerfile: ../resources/Dockerfile.j2
     pre_build_image: false
     command: /sbin/init
