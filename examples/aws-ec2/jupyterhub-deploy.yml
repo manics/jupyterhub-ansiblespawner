@@ -16,7 +16,7 @@
         gpgkey: https://repo.anaconda.com/pkgs/misc/gpgkeys/anaconda.asc
 
     - name: Upgrade packages
-      yum:
+      dnf:
         name: "*"
         state: latest
 
@@ -26,6 +26,10 @@
           - conda
           - git
           - screen
+          # packaging module is needed for the pip module even though
+          # it's in a virtualenv
+          # https://github.com/ansible/ansible/issues/82444
+          - python3-packaging
         state: present
 
   roles:
@@ -74,7 +78,7 @@
     - name: Install jupyterhub-ansiblespawner
       pip:
         name:
-          - git+https://github.com/manics/jupyterhub-ansiblespawner.git@5651185d187f89267717f172f2903028ef5bc257
+          - git+https://github.com/manics/jupyterhub-ansiblespawner.git@main
         executable: /opt/conda/bin/pip
         state: present
 

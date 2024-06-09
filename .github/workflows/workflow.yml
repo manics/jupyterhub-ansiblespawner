@@ -103,6 +103,13 @@ jobs:
         run: |
           echo "VIRTUAL_ENV=$(dirname $(dirname $(which python)))" >> "$GITHUB_ENV"
 
+      - name: Modify jupyterhub-deploy.yml to use this branch instead of main
+        run: |
+          CURRENT_REF="git+https://github.com/manics/jupyterhub-ansiblespawner.git@main"
+          NEW_REF="git+https://github.com/${{ github.repository }}.git@${{ github.ref }}"
+          sed -i "s%$CURRENT_REF%$NEW_REF%" examples/aws-ec2/jupyterhub-deploy.yml
+          git diff
+
       - name: Run tests
         run: |
           cd examples/aws-ec2

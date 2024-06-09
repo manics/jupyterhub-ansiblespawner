@@ -4,23 +4,21 @@ FROM {{ item.registry.url }}/{{ item.image }}
 FROM {{ item.image }}
 {% endif %}
 
+{% if item.env is defined %}
+{% for var, value in item.env.items() %}
+{% if value %}
+ENV {{ var }} {{ value }}
+{% endif %}
+{% endfor %}
+{% endif %}
 
 ENV container=docker
 
-# RUN yum -y install systemd ; \
-#     cd /lib/systemd/system/sysinit.target.wants/ ; \
-#     for i in *; do [ $i = systemd-tmpfiles-setup.service ] || rm -f $i ; done ; \
-#     rm -f /lib/systemd/system/multi-user.target.wants/* ; \
-#     rm -f /etc/systemd/system/*.wants/* ; \
-#     rm -f /lib/systemd/system/local-fs.target.wants/* ; \
-#     rm -f /lib/systemd/system/sockets.target.wants/*udev* ; \
-#     rm -f /lib/systemd/system/sockets.target.wants/*initctl* ; \
-#     rm -f /lib/systemd/system/basic.target.wants/* ; \
-#     rm -f /lib/systemd/system/anaconda.target.wants/*
+RUN dnf makecache && dnf --assumeyes install /usr/bin/python3 /usr/bin/python3-config /usr/bin/dnf-3 sudo bash iproute
 
 # Install systemd so that we can overwrite it without other packages overwriting our change
-RUN yum -y install python3 sudo systemd
-RUN curl -sfLo /usr/bin/systemctl https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/9cbe1a00eb4bdac6ff05b96ca34ec9ed3d8fc06c/files/docker/systemctl3.py && \
+RUN dnf -y install systemd
+RUN curl -sfLo /usr/bin/systemctl https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/v1.5.8066/files/docker/systemctl3.py && \
     chmod a+x /usr/bin/systemctl && \
     ln -sf /usr/bin/systemctl /sbin/init
 
