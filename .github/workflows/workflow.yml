@@ -68,7 +68,7 @@ jobs:
 
       # https://github.com/marketplace/actions/codecov
       - name: Upload coverage stats
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         # https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions
         # Upload regardless of whether tests pass or fail
         if: ${{ !cancelled() }}
