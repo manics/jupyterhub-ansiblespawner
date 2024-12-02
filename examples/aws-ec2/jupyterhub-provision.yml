@@ -50,17 +50,17 @@
         tags: "{{ default_tags }}"
       register: _subnet
 
-    # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_igw_module.rst
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vpc_igw_module.html
     - name: Create VPC internet gateway
-      community.aws.ec2_vpc_igw:
+      amazon.aws.ec2_vpc_igw:
         vpc_id: "{{ _vpc.vpc.id }}"
         state: "{{ state }}"
         tags: "{{ default_tags }}"
       # register: _gateway
 
-    # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_route_table_module.rst
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vpc_route_table_module.html
     - name: Setup external routing
-      community.aws.ec2_vpc_route_table:
+      amazon.aws.ec2_vpc_route_table:
         routes:
           - dest: 0.0.0.0/0
             gateway_id: igw
@@ -71,17 +71,17 @@
         tags: "{{ default_tags }}"
 
     # TODO: Disable public IP in create.yml and use NAT
-    # https://docs.ansible.com/ansible/latest/collections/community/aws/ec2_vpc_nat_gateway_module.html
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vpc_nat_gateway_module.html
     # - name: Create NAT gateway for internal instances
-    #   community.aws.ec2_vpc_nat_gateway:
+    #   amazon.aws.ec2_vpc_nat_gateway:
     #     state: "{{ state }}"
     #     subnet_id: "{{ _subnet.subnet.id }}"
     #     wait: true
     #     wait_timeout: "{{ wait_timeout }}"
 
-    # https://docs.ansible.com/ansible/latest/collections/community/aws/iam_role_module.html
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/iam_role_module.html
     - name: Create IAM role and instance profile
-      community.aws.iam_role:
+      amazon.aws.iam_role:
         # Only allow EC2 instances to assume the role
         # https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2.html
         assume_role_policy_document: "{{ lookup('file','assume-policy-ec2.json') }}"
@@ -96,18 +96,18 @@
     # In-line policy (alternative is to create a ManagedPolicy)
     # arn:aws:iam::aws:policy/AmazonEC2FullAccess for ec2:* only
     # TODO: Restrict permissions to only what's required
-    # https://docs.ansible.com/ansible/latest/collections/community/aws/iam_policy_module.html
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/iam_policy_module.html
     - name: Create IAM policy
-      community.aws.iam_policy:
+      amazon.aws.iam_policy:
         iam_type: role
         iam_name: jupyterhub-ansiblespawner
         policy_name: jupyterhub-ansiblespawner
         state: "{{ state }}"
         policy_json: " {{ lookup( 'file', 'policy-ec2-allow-all.json') }} "
 
-    # https://github.com/ansible-collections/community.aws/blob/1.3.0/docs/community.aws.ec2_instance_module.rst
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_module.html
     - name: Create instance
-      community.aws.ec2_instance:
+      amazon.aws.ec2_instance:
         image_id: "{{ cloud_baseimage }}"
         # ARN doesn't seem to work, so use name
         # instance_role: "{{ _role.arn }}"

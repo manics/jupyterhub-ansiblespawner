@@ -2,7 +2,7 @@
   hosts: localhost
   tasks:
     - name: Create instance
-      community.aws.ec2_instance:
+      amazon.aws.ec2_instance:
         image_id: "{{ cloud_baseimage }}"
         instance_type: t2.micro
         filters:

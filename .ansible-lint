@@ -10,18 +10,17 @@ exclude_paths:
 # Mock modules or roles in order to pass ansible-playbook --syntax-check
 mock_modules:
   - amazon.aws.ec2_group
+  - amazon.aws.ec2_instance
+  - amazon.aws.ec2_instance_info
   - amazon.aws.ec2_key
+  - amazon.aws.ec2_vpc_igw
   - amazon.aws.ec2_vpc_net
   - amazon.aws.ec2_vpc_net_facts
+  - amazon.aws.ec2_vpc_route_table
+  - amazon.aws.ec2_vpc_route_table_info
   - amazon.aws.ec2_vpc_subnet
-
-  - community.aws.ec2_instance
-  - community.aws.ec2_instance_info
-  - community.aws.ec2_vpc_igw
-  - community.aws.ec2_vpc_route_table
-  - community.aws.ec2_vpc_route_table_info
-  - community.aws.iam_policy
-  - community.aws.iam_role
+  - amazon.aws.iam_policy
+  - amazon.aws.iam_role
 
   - community.docker.docker_container
   - community.docker.docker_container_info
