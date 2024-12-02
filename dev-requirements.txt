@@ -1,17 +1,18 @@
 # These are automatically bumped by dependabot
 ansible==11.0.0
-ansible-core==2.18.0
+ansible-core==2.18.1
 ansible-runner==2.4.0
+build==1.2.2.post1
 docker==7.1.0
 jupyterhub==5.2.1
 pre-commit==4.0.1
-pytest==8.3.3
+pytest==8.3.4
 pytest-asyncio==0.24.0
 pytest-cov==6.0.0
 # pytest-tornado==0.8.1
 traitlets==5.14.3
 
 # Additional dependencies for examples/aws-ec2 molecule test
-boto3==1.35.68
+boto3==1.35.72
 molecule==24.9.0
 molecule-plugins==23.5.3

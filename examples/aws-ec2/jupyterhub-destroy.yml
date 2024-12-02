@@ -4,9 +4,9 @@
 - name: ec2 destroy jupyterhub resources
   hosts: localhost
   tasks:
-    # https://github.com/ansible-collections/community.aws/blob/1.3.0/docs/community.aws.ec2_instance_module.rst
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_instance_module.html
     - name: Delete instance
-      community.aws.ec2_instance:
+      amazon.aws.ec2_instance:
         filters:
           # https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
           tag:Name: jupyterhub
@@ -42,22 +42,22 @@
             vpc_id: "{{ _vpcs.vpcs.0.vpc_id }}"
             state: absent
 
-        # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_igw_module.rst
+        # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vpc_igw_module.html
         - name: Delete VPC internet gateway
-          community.aws.ec2_vpc_igw:
+          amazon.aws.ec2_vpc_igw:
             vpc_id: "{{ _vpcs.vpcs.0.vpc_id }}"
             state: absent
 
-        # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_route_table_info_module.rst
+        # https://github.com/ansible-collections/community.aws/blob/main/docs/amazon.aws.ec2_vpc_route_table_info_module.rst
         - name: Find route tables which reference this VPC
-          community.aws.ec2_vpc_route_table_info:
+          amazon.aws.ec2_vpc_route_table_info:
             filters:
               vpc-id: "{{ _vpcs.vpcs.0.vpc_id }}"
           register: _route_tables
 
-        # # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_route_table_module.rst
+        # # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vpc_route_table_module.html
         # - name: Remove routes from route tables
-        #   community.aws.ec2_vpc_route_table:
+        #   amazon.aws.ec2_vpc_route_table:
         #     lookup: id
         #     route_table_id: "{{ item.id }}"
         #     routes: []
@@ -65,9 +65,9 @@
         #     vpc_id: "{{ _vpcs.vpcs.0.vpc_id }}"
         #   with_items: "{{ _route_tables.route_tables }}"
 
-        # https://github.com/ansible-collections/community.aws/blob/main/docs/community.aws.ec2_vpc_route_table_module.rst
+        # https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_vpc_route_table_module.html#ansible-collections-amazon-aws-ec2-vpc-route-table-module
         - name: Delete external routing
-          community.aws.ec2_vpc_route_table:
+          amazon.aws.ec2_vpc_route_table:
             lookup: id
             route_table_id: "{{ item.id }}"
             state: absent
@@ -83,7 +83,7 @@
         state: absent
 
     - name: Delete IAM policy
-      community.aws.iam_policy:
+      amazon.aws.iam_policy:
         iam_type: role
         iam_name: jupyterhub-ansiblespawner
         policy_name: jupyterhub-ansiblespawner
@@ -91,9 +91,9 @@
       # Fails if already deleted
       ignore_errors: true
 
-    # https://docs.ansible.com/ansible/latest/collections/community/aws/iam_role_module.html
+    # https://docs.ansible.com/ansible/latest/collections/amazon/aws/iam_role_module.html
     - name: Delete IAM role and instance profile
-      community.aws.iam_role:
+      amazon.aws.iam_role:
         name: jupyterhub-ansiblespawner
         path: /jupyterhub/
         delete_instance_profile: true

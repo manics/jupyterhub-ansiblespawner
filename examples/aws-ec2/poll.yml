@@ -2,7 +2,7 @@
   hosts: localhost
   tasks:
     - name: Get instance info
-      community.aws.ec2_instance_info:
+      amazon.aws.ec2_instance_info:
         filters:
           tag:Name: jupyter-{{ user.name }}
           tag:app: jupyter-ansiblespawner

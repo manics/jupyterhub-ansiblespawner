@@ -7,15 +7,10 @@
 collections:
   # https://galaxy.ansible.com/ui/repo/published/community/general/
   - name: community.general
-    version: 8.3.0
+    version: 10.0.1
   # https://galaxy.ansible.com/ui/repo/published/amazon/aws/
   - name: amazon.aws
-    version: 1.5.0
-    # version: 7.3.0
-  # https://galaxy.ansible.com/ui/repo/published/community/aws/
-  - name: community.aws
-    version: 1.5.0
-    # version: 7.1.0
+    version: 9.0.0
 
 # ansible-galaxy role install -p roles -r requirements.yml
 roles:

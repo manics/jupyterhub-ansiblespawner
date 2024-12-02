@@ -49,7 +49,7 @@ jobs:
           npm install -g configurable-http-proxy
 
       - name: Update setuptools_scm version
-        run: python setup.py build
+        run: python -mbuild
 
       - name: Install Ansible requirements
         run: |
@@ -73,7 +73,7 @@ jobs:
         # Upload regardless of whether tests pass or fail
         if: ${{ !cancelled() }}
         with:
-          file: ./coverage.xml
+          files: ./coverage.xml
           # fail_ci_if_error: true
 
   aws-deploy:
@@ -134,7 +134,7 @@ jobs:
       - name: Build package
         run: |
           python -mpip install wheel
-          python setup.py sdist bdist_wheel
+          python -mbuild
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.12.2
