@@ -12,7 +12,7 @@ authors = [
 ]
 description = "Spawn JupyterHub single user notebook servers using Ansible"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.8"
 license = {text = "BSD-3-Clause"}
 keywords = ["jupyterhub", "spawner"]
 classifiers = [
@@ -25,10 +25,10 @@ classifiers = [
   "Programming Language :: Python :: 3",
 ]
 dependencies = [
-  "jupyterhub>=1.0.0",
-  "ansible>=2.9",
-  "ansible-runner>=1.4"
-  # "traitlets>=5",
+  "jupyterhub>=4",
+  "ansible>=2.10",
+  "ansible-runner>=2",
+  "traitlets>=5",
 ]
 
 [project.entry-points."jupyterhub.spawners"]
