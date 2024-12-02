@@ -73,7 +73,7 @@ jobs:
         # Upload regardless of whether tests pass or fail
         if: ${{ !cancelled() }}
         with:
-          file: ./coverage.xml
+          files: ./coverage.xml
           # fail_ci_if_error: true
 
   aws-deploy:
