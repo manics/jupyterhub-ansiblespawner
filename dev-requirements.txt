@@ -14,5 +14,5 @@ traitlets==5.14.3
 
 # Additional dependencies for examples/aws-ec2 molecule test
 boto3==1.35.92
-molecule==24.12.0
+molecule==25.2.0
 molecule-plugins==23.6.0
