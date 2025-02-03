@@ -44,3 +44,5 @@ extra_vars:
   user:
     name: ansible
 
+# Needed for pre-commit
+offline: true
