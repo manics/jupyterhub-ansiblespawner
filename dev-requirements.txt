@@ -7,7 +7,7 @@ docker==7.1.0
 jupyterhub==5.3.0
 pre-commit==4.2.0
 pytest==8.4.1
-pytest-asyncio==0.25.1
+pytest-asyncio==1.0.0
 pytest-cov==6.2.1
 # pytest-tornado==0.8.1
 traitlets==5.14.3
