@@ -4,7 +4,7 @@ ansible-core==2.18.2
 ansible-runner==2.4.1
 build==1.2.2.post1
 docker==7.1.0
-jupyterhub==5.2.1
+jupyterhub==5.3.0
 pre-commit==4.2.0
 pytest==8.3.5
 pytest-asyncio==0.25.1
