@@ -9,7 +9,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
       - uses: pre-commit/action@v3.0.1
 
@@ -33,7 +33,7 @@ jobs:
           slirp4netns --version
           fuse-overlayfs --version
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-python@v5
         with:
@@ -87,7 +87,7 @@ jobs:
           - podman-deploy
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-python@v5
         with:
@@ -127,7 +127,7 @@ jobs:
       - test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-python@v5
 
